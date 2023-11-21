@@ -1,9 +1,8 @@
 [package]
-name = "forensics"
+name = "nitro"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 anyhow = "1"
-nds = "0.2"
-nitro_fs = "0.2"
+binrw = "0.13"
