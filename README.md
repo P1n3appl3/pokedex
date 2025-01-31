@@ -27,6 +27,7 @@ Games:
 - Diamond
 - Pearl
 - Platinum
+- maybe b/w/b2/w2?? after i play them?
 
 Info (priority list):
 - box sprites
@@ -58,3 +59,57 @@ Functionality:
 - type chart
 - cli
   - hyphen option completion, otherwise name/number(id) and gender/form for second positional arg
+
+### Ideas
+
+- levenshein distance or fuzzy search for names?
+- [natures grid](https://pokemondb.net/mechanics/natures)
+- [type chart](https://pokemondb.net/type/old)
+  - single and double type effectivenesses
+- move coverage calculator?
+- search for mons that can learn certain move(s) alongside certain abilities with certain type(s), filter thresholds or sort by stats?
+
+## References
+
+- great historical background and technical breakdown of the [gba](https://www.copetti.org/writings/consoles/game-boy-advance/) and [nds](https://www.copetti.org/writings/consoles/nintendo-ds)
+- comprehensive gba/ds technical resource including file formats: [GBATEK](https://mgba-emu.github.io/gbatek/#dscartridgenitroromandnitroarcfilesystems)
+- [gen 3 color palettes](https://voliol.neocities.org/articles/genIIIpalettes) explanation
+- hgss had an unnamed filesystem but some resources like [this](https://projectpokemon.org/home/docs/gen-4/hgss-file-system-r21/) have guides to which file is which
+- data format and dumps for all gen 4 games: https://projectpokemon.org/rawdb
+
+- https://eev.ee/blog/2017/08/02/datamining-pokemon/
+- https://eev.ee/blog/2016/08/05/storing-pok%C3%A9mon-without-sql
+
+tools to dump nitro filesystem:
+- https://github.com/pret/ds_disassembly_tools
+- https://scenegate.github.io/Ekona/
+- high quality rust library + cli: https://lib.rs/crates/ds-rom
+- another [rust library](https://lib.rs/crates/nitro_fs) and a [less complete one](https://lib.rs/crates/nds)
+
+tools to dump narcs:
+- https://github.com/nickworonekin/narchive
+
+hacking tools/editors that probably already have all the info I want:
+- https://github.com/magical/pokemon-nds-sprites for gen4 sprites
+- https://github.com/haven1433/HexManiacAdvance for gen3
+- https://github.com/turtleisaac/PokEditor for gen4
+
+other terminal pokemon sprite renderers:
+- https://github.com/Tenchi2xh/pokedex-cli
+- https://github.com/yannjor/krabby
+- https://github.com/talwat/pokeget-rs
+- https://github.com/31marcosalsa/pokeTerm
+- https://github.com/Findarato/pokemon-colorscripts
+- https://github.com/possatti/pokemonsay
+- https://github.com/HRKings/pokemonsay-newgenerations
+
+possible online sources for fallback data that I don't derive like encounter tables:
+- veekun (TODO: check if their database has this and maybe use it offline?)
+- serebii
+- bulbapedia
+- pokemondb
+
+existing sprite databases to check against:
+- [veekun's](http://git.veekun.com/pokedex-media.git/tree/HEAD:/pokemon/icons) (they also have a convenient [separate download](https://veekun.com/dex/downloads))
+- [pokesprite](https://msikma.github.io/pokesprite/)
+- pokemondb/pokemondb/serebii have structured urls so i could scrape
