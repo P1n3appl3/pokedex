@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use binrw::BinReaderExt;
 
-use pokedex::*;
+use pokedex::{banner::Banner, NdsHeader};
 
 use std::{
     env, fs,
