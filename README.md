@@ -72,22 +72,26 @@ Functionality:
 ## References
 
 - great historical background and technical breakdown of the [gba](https://www.copetti.org/writings/consoles/game-boy-advance/) and [nds](https://www.copetti.org/writings/consoles/nintendo-ds)
-- comprehensive gba/ds technical resource including file formats: [GBATEK](https://mgba-emu.github.io/gbatek/#dscartridgenitroromandnitroarcfilesystems)
+- comprehensive gba/ds technical resource including file formats: [GBATEK](https://problemkaputt.de/gbatek.htm)
 - [gen 3 color palettes](https://voliol.neocities.org/articles/genIIIpalettes) explanation
 - hgss had an unnamed filesystem but some resources like [this](https://projectpokemon.org/home/docs/gen-4/hgss-file-system-r21/) have guides to which file is which
-- data format and dumps for all gen 4 games: https://projectpokemon.org/rawdb
+- data format [notes and dumps](https://projectpokemon.org/rawdb) for all gen 4 games
+- another [ds rom header breakdown](http://dsibrew.org/wiki/DSi_cartridge_header) with the extra dsi bits (maybe relevant if I ever want to support b/w/b2/w2)
 
-- https://eev.ee/blog/2017/08/02/datamining-pokemon/
+eevee's blog posts:
 - https://eev.ee/blog/2016/08/05/storing-pok%C3%A9mon-without-sql
+- https://eev.ee/blog/2017/08/02/datamining-pokemon
 
-tools to dump nitro filesystem:
+tools and resources to read/dump nitro filesystem:
+- high quality rust [library + cli](https://lib.rs/crates/ds-rom)
+- another [rust library](https://lib.rs/crates/nitro_fs) and a [less complete one](https://lib.rs/crates/nds)
 - https://github.com/pret/ds_disassembly_tools
 - https://scenegate.github.io/Ekona/
-- high quality rust library + cli: https://lib.rs/crates/ds-rom
-- another [rust library](https://lib.rs/crates/nitro_fs) and a [less complete one](https://lib.rs/crates/nds)
+- cute [blog post](https://imrannazar.com/The-Smallest-NDS-File) on making the smallest nds file possible
 
 tools to dump narcs:
 - https://github.com/nickworonekin/narchive
+- https://ndspy.readthedocs.io/en/latest/api/narc.html
 
 hacking tools/editors that probably already have all the info I want:
 - https://github.com/magical/pokemon-nds-sprites for gen4 sprites

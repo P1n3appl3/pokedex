@@ -1,8 +1,11 @@
 [package]
-name = "nitro"
+name = "pokedex"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1"
 binrw = "0.13"
+smol_str = "0.3"
+anyhow = "1"
+owo-colors = "4.1.0"
+# thiserror = "2"
