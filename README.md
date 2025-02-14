@@ -1,6 +1,6 @@
 I'm Feeling restless at work, haven't gotten to write a non-trivial amount of rust recently. I've also been doing a LOT of small tweaks to various software I use as I bring up my new laptop and I'm exhausted from that and want to stop worrying about those big programs and their various shortcomings by writing a teeny program that perfectly satisfies my use case.
 
-[eevee's blog post](https://eev.ee/blog/2017/08/02/datamining-pokemon/) does this for the full-size sprites, but I want the smaller menu/box sprites to display in my terminal. once I realized this I decided to go do it myself for fun. [eevee's toolkit](https://github.com/eevee/porigon-z) for data extraction can probably get those icon-sized sprites too, but I didn't bother checking.
+[eevee's blog post](https://eev.ee/blog/2017/08/02/datamining-pokemon/) does this for the full-size sprites, but I want the smaller menu/box sprites to display in my terminal. once I realized this I decided to go do it myself for fun. [eevee's toolkit](https://github.com/eevee/porigon-z/blob/master/porigonz/nds/util/sprites.py) for data extraction (or the [hg/ss decompilation](https://github.com/pret/pokeheartgold/blob/master/include/constants/sprites.h)) can probably get those icon-sized sprites too, but I didn't bother checking.
 
 [This](https://github.com/Tenchi2xh/pokedex-cli) one had the coolest UI out of the dozen or so I looked at, so it's what I'll try to recreate. That means I need not only sprites, but names, nicknames, evolutions, types, height/weight, and pokedex prose.
 
@@ -35,6 +35,7 @@ Info (priority list):
 - pokedex prose description
 - pokedex attributes (height/weight)
 - type/stats
+- evolutions
 - hg/ss overworld sprites (2 frames for all 4 directions)
 - back sprites
 - pokeball/other item sprites
@@ -77,6 +78,7 @@ Functionality:
 - hgss had an unnamed filesystem but some resources like [this](https://projectpokemon.org/home/docs/gen-4/hgss-file-system-r21/) have guides to which file is which
 - data format [notes and dumps](https://projectpokemon.org/rawdb) for all gen 4 games
 - another [ds rom header breakdown](http://dsibrew.org/wiki/DSi_cartridge_header) with the extra dsi bits (maybe relevant if I ever want to support b/w/b2/w2)
+- [list](https://gist.github.com/eevee/15a92e26088d79a77fca) of pokemon with forms
 
 eevee's blog posts:
 - https://eev.ee/blog/2016/08/05/storing-pok%C3%A9mon-without-sql

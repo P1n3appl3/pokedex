@@ -1,10 +1,11 @@
-use binrw::BinRead;
+use std::{
+    fmt::{self, Debug, Formatter, Write},
+    string::FromUtf16Error,
+};
+
+use binrw::{BinRead, NullWideString};
 use owo_colors::{OwoColorize, Rgb};
 use smol_str::SmolStr;
-
-use std::fmt::{self, Debug, Formatter, Write};
-
-use crate::u16_string;
 
 // https://problemkaputt.de/gbatek-ds-cartridge-icon-title.htm
 #[derive(Clone, Debug, BinRead)]
@@ -13,18 +14,22 @@ pub struct Banner {
     pub crc: u16, // checksum of the rest of this struct, not including first 32 bytes
     #[br(pad_before(28))]
     pub icon: Icon,
-    #[br(try_map = u16_string::<128>)]
+    #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub jp: SmolStr,
-    #[br(try_map = u16_string::<128>)]
+    #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub en: SmolStr,
-    #[br(try_map = u16_string::<128>)]
+    #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub fr: SmolStr,
-    #[br(try_map = u16_string::<128>)]
+    #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub de: SmolStr,
-    #[br(try_map = u16_string::<128>)]
+    #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub it: SmolStr,
-    #[br(try_map = u16_string::<128>)]
+    #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub es: SmolStr,
+}
+
+fn wide_smol_str(s: NullWideString) -> Result<SmolStr, FromUtf16Error> {
+    Ok(SmolStr::new(String::from_utf16(&s)?))
 }
 
 // https://gbatemp.net/threads/reading-the-nds-icon-data.45360/#post-9167077

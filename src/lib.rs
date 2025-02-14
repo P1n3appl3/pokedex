@@ -1,20 +1,25 @@
+#![allow(unused)]
+
 pub mod banner;
 pub mod fs;
 
-use binrw::BinRead;
-use smol_str::SmolStr;
+use std::{
+    fmt::{self, Debug, Formatter},
+    str::Utf8Error,
+};
 
-use std::{ffi::CStr, fmt::Debug};
+use binrw::{BinRead, NullString};
+use smol_str::SmolStr;
 
 // https://problemkaputt.de/gbatek-ds-cartridge-header.htm
 #[derive(Clone, Debug, BinRead)]
 #[br(assert(self.logo_crc == 0xCF56))]
 pub struct NdsHeader {
-    #[br(try_map = null_str::<12>)]
+    #[br(pad_size_to = 12, try_map = smol_str)]
     pub title: SmolStr,
-    #[br(try_map = fixed_string::<4>)]
+    #[br(try_map = fixed_str::<4>)]
     pub game_code: SmolStr,
-    #[br(try_map = fixed_string::<2>)]
+    #[br(try_map = fixed_str::<2>)]
     pub maker_code: SmolStr,
     pub unit_code: u8,
     pub encryption_seed_select: u8,
@@ -44,50 +49,39 @@ pub struct NdsHeader {
     pub header_crc: u16,
 }
 
-#[derive(Clone, BinRead)]
+fn smol_str(s: NullString) -> Result<SmolStr, Utf8Error> {
+    Ok(SmolStr::new(std::str::from_utf8(&s)?))
+}
+
+fn fixed_str<const N: usize>(s: [u8; N]) -> Result<SmolStr, Utf8Error> {
+    Ok(SmolStr::new(std::str::from_utf8(&s)?))
+}
+
+#[derive(Copy, Clone, BinRead)]
 pub struct BinaryHeader {
-    rom_offset: u32,
-    entry_addr: u32,
-    load_addr: u32,
-    size: u32,
+    pub rom_offset: u32,
+    pub entry_addr: u32,
+    pub load_addr: u32,
+    pub size: u32,
 }
 
 impl Debug for BinaryHeader {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "[u8; 0x{:x}] @ 0x{:x} -> {:x} ~ {:x}",
-            self.size, self.rom_offset, self.entry_addr, self.load_addr
+            "[u8; 0x{:x}] @ 0x{:x} -> 0x{:x} (entry: 0x{:x})",
+            self.size,
+            self.rom_offset,
+            self.load_addr,
+            self.entry_addr - self.load_addr
         )
     }
 }
 
-#[derive(Clone, BinRead)]
+#[derive(Copy, Clone, BinRead)]
 pub struct Slice {
-    offset: u32,
-    size: u32,
-}
-
-// #[derive(Debug, Clone, Error)]
-// enum StrError {
-//     Null(FromBytesUntilNulError),
-//     Unicode(Utf8Error),
-// }
-
-type StrResult = anyhow::Result<SmolStr>;
-
-fn null_str<const N: usize>(bytes: [u8; N]) -> StrResult {
-    let cstr = CStr::from_bytes_until_nul(&bytes[..])?;
-    Ok(SmolStr::new(cstr.to_str()?))
-}
-
-fn fixed_string<const N: usize>(bytes: [u8; N]) -> StrResult {
-    Ok(std::str::from_utf8(&bytes).map(SmolStr::new)?)
-}
-
-fn u16_string<const N: usize>(bytes: [u16; N]) -> StrResult {
-    let s = String::from_utf16(&bytes[..bytes.iter().position(|&b| b == 0).unwrap()])?;
-    Ok(SmolStr::new(s.replace('\n', " | ")))
+    pub offset: u32,
+    pub size: u32,
 }
 
 impl Debug for Slice {

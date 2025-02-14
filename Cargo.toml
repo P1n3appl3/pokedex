@@ -5,6 +5,9 @@ edition = "2021"
 
 [dependencies]
 binrw = "0.13"
+modular-bitfield-msb = "0.11"
+# modular-bitfield = "0.11"
+# bitfield = "0.18.1"
 smol_str = "0.3"
 anyhow = "1"
 owo-colors = "4.1.0"
