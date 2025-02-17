@@ -24,7 +24,7 @@ macro_rules! doo {
 
 pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Result<()> {
     let mut files: FileAllocationTable = Vec::new();
-    f.seek(Start(fat.offset as u64));
+    f.seek(Start(fat.offset as u64))?;
     for _ in 0..fat.size as usize / std::mem::size_of::<FatEntry>() {
         files.push(f.read_ne()?);
     }
@@ -35,12 +35,14 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Res
         dirs.push(f.read_ne()?)
     }
     let mut segments = vec![0];
+    let mut d_entries = Vec::new();
+    let mut f_entries = Vec::new();
     for d in &dirs {
         let mut cur_id = d.first_id;
-        f.seek(Start((fnt.offset + d.subtable_offset) as u64));
+        f.seek(Start((fnt.offset + d.subtable_offset) as u64))?;
         loop {
             let mut e: Entry = f.read_ne()?;
-            print!("{}", "  ".repeat(segments.len() - 1));
+            // print!("{}", "  ".repeat(segments.len() - 1));
             if !e.header.is_dir() {
                 if e.header.len() == 0 {
                     segments.pop();
@@ -49,7 +51,8 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Res
                 e.id = cur_id;
                 cur_id += 1;
                 let f = &files[e.id as usize];
-                println!("{:20}: {:>}", e.name, Bytes(f.end - f.start));
+                // println!("{:20}: {:>}", e.name, Bytes(f.end - f.start));
+                f_entries.push(e);
             } else {
                 // doo!((
                 //     let cur = *segments.last().unwrap();
@@ -60,11 +63,33 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Res
                 //     }
                 // });
                 segments.push(e.id);
-                println!("{} (0x{:x})", e.name, e.id);
+                // println!("{} (0x{:x})", e.name, e.id);
+
+                d_entries.push(e);
             }
         }
     }
 
+    let mut segments = vec![0xF000];
+    let (mut fi, mut di) = (0, 0);
+    while fi < f_entries.len() {
+        let d = &d_entries[di];
+        let parent = dirs[(d.id & !0xF000) as usize].parent_id;
+        while parent != *segments.last().unwrap() {
+            segments.pop();
+        }
+        let indent = "  ".repeat(segments.len() - 1);
+        segments.push(d.id);
+        println!("{indent}{} (0x{:04x})", d.name, d.id);
+
+        let mut f = &f_entries[fi];
+        while dirs[(d.id & !0xF000) as usize].first_id > f.id {
+            println!("{indent}  {}", f.name);
+            fi += 1;
+            f = &f_entries[fi];
+        }
+        di += 1;
+    }
     Ok(())
 }
 
