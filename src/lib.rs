@@ -1,5 +1,3 @@
-// #![allow(unused)]
-
 pub mod banner;
 pub mod fs;
 
