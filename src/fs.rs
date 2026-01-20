@@ -35,20 +35,23 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Res
                 debug_assert!(!e.header.is_dir());
                 break;
             }
-            print!("{}", "  ".repeat(stack.len()));
+            // print!("{}", "  ".repeat(stack.len()));
             if !e.header.is_dir() {
                 e.id = cur_id;
                 cur_id += 1;
                 let f = &files[e.id as usize];
                 let size = Bytes(f.end - f.start).to_string();
-                println!(
-                    "\x1b[3m{}\x1b[0m{}\x1b[2m{size:>8} @ 0x{:04x}\x1b[0m",
-                    e.name,
-                    " ".repeat(60 - e.name.len() - stack.len() * 2),
-                    e.id,
-                );
+                if e.name == "msg.narc" {
+                    dbg!(&f.start);
+                }
+                // println!(
+                //     "\x1b[3m{}\x1b[0m{}\x1b[2m{size:>8} @ 0x{:04x}\x1b[0m",
+                //     e.name,
+                //     " ".repeat(60 - e.name.len() - stack.len() * 2),
+                //     e.id,
+                // );
             } else {
-                println!("\x1b[1m{}\x1b[0m \x1b[2m(0x{:x})\x1b[0m", e.name, e.id);
+                // println!("\x1b[1m{}\x1b[0m \x1b[2m(0x{:x})\x1b[0m", e.name, e.id);
                 stack.push((f.stream_position()?, cur_id));
                 let dir = dirs[(e.id & 0xFFF) as usize];
                 stack.push(((fnt.offset + dir.subtable_offset) as u64, dir.first_id));
@@ -92,6 +95,7 @@ pub struct EntryHeader {
     len: B7,
 }
 
+// TODO: enum with is_dir bool as magic for variant selection
 #[derive(BinRead, Clone)]
 pub struct Entry {
     pub header: EntryHeader,
@@ -119,8 +123,8 @@ fn smol_str(s: Vec<u8>) -> Result<SmolStr, Utf8Error> {
 }
 
 #[derive(BinRead, Debug, Copy, Clone)]
-struct FatEntry {
+pub struct FatEntry {
     start: u32,
     end: u32,
 }
-type FileAllocationTable = Vec<FatEntry>;
+pub type FileAllocationTable = Vec<FatEntry>;

@@ -3,10 +3,12 @@ pub mod fs;
 
 use std::{
     fmt::{self, Debug, Formatter},
+    mem,
     str::Utf8Error,
 };
 
 use binrw::{BinRead, NullString};
+use fs::{FatEntry, FileAllocationTable};
 use smol_str::SmolStr;
 
 // https://problemkaputt.de/gbatek-ds-cartridge-header.htm
@@ -45,6 +47,33 @@ pub struct NdsHeader {
     #[br(pad_before = 212)] // 56 for reserved data, 156 for nintendo logo
     pub logo_crc: u16,
     pub header_crc: u16,
+}
+
+#[derive(Clone, Debug, BinRead)]
+#[br(magic = b"NARC")]
+pub struct Narc {
+    #[br(assert(byte_order == 0xFFFE))]
+    byte_order: u16,
+    #[br(assert(version == 0x0100))]
+    version: u16,
+    file_size: u32,
+    #[br(assert(chunk_size == 16))]
+    chunk_size: u16,
+    #[br(assert(num_chunks == 3))]
+    num_chunks: u16,
+    #[br(magic = b"BTAF")] // chunk name (file allocation table block)
+    fat_size: u32, // (including ^ and this field, so -8 for actual)
+    num_files: u16,
+    #[br(magic = 0u16)] // reserved
+    #[br(count = num_files)]
+    fat: FileAllocationTable,
+    #[br(magic = b"BTNF")] // chunk name (file name table block)
+    fnt_size: u32, // (including ^ and this field, so -8 for actual)
+    #[br(align_after = 4)]
+    fnt: (),
+    #[br(magic = b"GMIF")] // chunk name (file image block)
+    img_size: u32, // (including ^ and this field, so -8 for actual)
+    img_data: (),
 }
 
 fn smol_str(s: NullString) -> Result<SmolStr, Utf8Error> {
