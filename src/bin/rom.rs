@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, Result};
 use binrw::BinReaderExt;
 
-use pokedex::{banner::Banner, fs::parse_nitro_fs, NdsHeader};
+use pokedex::{NdsHeader, banner::Banner, fs::parse_nitro_fs};
 
 fn main() -> Result<()> {
     let rom_path = env::args().nth(1).context("pass a ROM path")?;

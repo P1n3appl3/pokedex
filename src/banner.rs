@@ -1,11 +1,10 @@
-use std::{
-    fmt::{self, Debug, Formatter, Write},
-    string::FromUtf16Error,
-};
+use std::fmt::{self, Debug, Formatter, Write};
 
-use binrw::{BinRead, NullWideString};
+use binrw::BinRead;
 use owo_colors::{OwoColorize, Rgb};
 use smol_str::SmolStr;
+
+use crate::wide_smol_str;
 
 // https://problemkaputt.de/gbatek-ds-cartridge-icon-title.htm
 #[derive(Clone, Debug, BinRead)]
@@ -26,10 +25,6 @@ pub struct Banner {
     pub it: SmolStr,
     #[br(pad_size_to = 256, try_map = wide_smol_str)]
     pub es: SmolStr,
-}
-
-fn wide_smol_str(s: NullWideString) -> Result<SmolStr, FromUtf16Error> {
-    Ok(SmolStr::new(String::from_utf16(&s)?))
 }
 
 // https://gbatemp.net/threads/reading-the-nds-icon-data.45360/#post-9167077

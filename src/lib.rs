@@ -1,13 +1,15 @@
 pub mod banner;
+pub mod charset;
 pub mod fs;
 
 use std::{
     fmt::{self, Debug, Formatter},
     mem,
     str::Utf8Error,
+    string::FromUtf16Error,
 };
 
-use binrw::{BinRead, NullString};
+use binrw::{BinRead, NullString, NullWideString};
 use fs::{FatEntry, FileAllocationTable};
 use smol_str::SmolStr;
 
@@ -69,11 +71,12 @@ pub struct Narc {
     fat: FileAllocationTable,
     #[br(magic = b"BTNF")] // chunk name (file name table block)
     fnt_size: u32, // (including ^ and this field, so -8 for actual)
-    #[br(align_after = 4)]
+
+    // #[br(align_after = 4)]
     fnt: (),
-    #[br(magic = b"GMIF")] // chunk name (file image block)
-    img_size: u32, // (including ^ and this field, so -8 for actual)
-    img_data: (),
+    // #[br(magic = b"GMIF")] // chunk name (file image block)
+    // img_size: u32, // (including ^ and this field, so -8 for actual)
+    // img_data: (),
 }
 
 fn smol_str(s: NullString) -> Result<SmolStr, Utf8Error> {
@@ -82,6 +85,10 @@ fn smol_str(s: NullString) -> Result<SmolStr, Utf8Error> {
 
 fn fixed_str<const N: usize>(s: [u8; N]) -> Result<SmolStr, Utf8Error> {
     Ok(SmolStr::new(std::str::from_utf8(&s)?))
+}
+
+pub fn wide_smol_str(s: NullWideString) -> Result<SmolStr, FromUtf16Error> {
+    Ok(SmolStr::new(String::from_utf16(&s)?))
 }
 
 #[derive(Copy, Clone, BinRead)]

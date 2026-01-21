@@ -1,7 +1,8 @@
 // http://problemkaputt.de/gbatek-ds-cartridge-nitrorom-and-nitroarc-file-systems.htm
 use std::{
     fmt::{self, Debug, Display, Formatter},
-    io::{Read, Seek, SeekFrom::Start},
+    io::{Cursor, Read, Seek, SeekFrom::Start},
+    os::unix::ffi::OsStrExt,
     str::Utf8Error,
 };
 
@@ -10,9 +11,9 @@ use binrw::{BinRead, BinReaderExt};
 use modular_bitfield_msb::prelude::*;
 use smol_str::SmolStr;
 
-use crate::Slice;
+use crate::{Narc, Slice, charset::CHARSET};
 
-pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Result<()> {
+pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result<()> {
     let mut files: FileAllocationTable = Vec::new();
     f.seek(Start(fat.offset as u64))?;
     for _ in 0..fat.size as usize / std::mem::size_of::<FatEntry>() {
@@ -39,10 +40,28 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Res
             if !e.header.is_dir() {
                 e.id = cur_id;
                 cur_id += 1;
-                let f = &files[e.id as usize];
-                let size = Bytes(f.end - f.start).to_string();
+                let file = &files[e.id as usize];
+                let size = Bytes(file.end - file.start).to_string();
                 if e.name == "msg.narc" {
-                    dbg!(&f.start);
+                    let raw = &f.get_ref()[file.start as usize..file.end as usize];
+                    let mut c = Cursor::new(raw);
+                    let narc: Narc = c.read_ne()?;
+                    let img_start = c.position() as u32 + narc.fnt_size;
+                    for (i, f) in narc.fat.iter().enumerate() {
+                        // if i != 615 {
+                        //     continue;
+                        // }
+                        println!(
+                            "{i} 0x{:X} {}",
+                            f.start + file.start + img_start as u32,
+                            Bytes(f.end - f.start)
+                        );
+                        decode_msg(
+                            &raw[(img_start + f.start) as usize
+                                ..(img_start + f.end) as usize],
+                        )?;
+                    }
+                    return Ok(());
                 }
                 // println!(
                 //     "\x1b[3m{}\x1b[0m{}\x1b[2m{size:>8} @ 0x{:04x}\x1b[0m",
@@ -52,12 +71,72 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut (impl Read + Seek)) -> Res
                 // );
             } else {
                 // println!("\x1b[1m{}\x1b[0m \x1b[2m(0x{:x})\x1b[0m", e.name, e.id);
-                stack.push((f.stream_position()?, cur_id));
+                stack.push((f.position(), cur_id));
                 let dir = dirs[(e.id & 0xFFF) as usize];
                 stack.push(((fnt.offset + dir.subtable_offset) as u64, dir.first_id));
                 break;
             }
         }
+    }
+
+    Ok(())
+}
+
+// transcribed to rust straight from
+// https://projectpokemon.org/rawdb/platinum/formats/msg.php
+fn decode_msg(bytes: &[u8]) -> Result<()> {
+    let mut c = Cursor::new(bytes);
+    let count: u16 = c.read_ne()?;
+    let seed: u16 = c.read_ne()?;
+    let mut offsets = Vec::new();
+    let mut sizes = Vec::new();
+    // let mut strings = Vec::new();
+
+    for i in 1..=count {
+        let temp = seed as u64 * i as u64;
+        let key = ((temp * 0x2fd) & 0xFFFF) | ((temp * 0x2FD0000) & 0xFFFF0000);
+        offsets.push(c.read_le::<u32>()? ^ key as u32);
+        sizes.push(c.read_le::<u32>()? ^ key as u32);
+    }
+
+    for i in 1..=count {
+        let offset = offsets[i as usize - 1];
+        let size = sizes[i as usize - 1];
+        let mut key = (0x91BD3 * i as u32) & 0xFFFF;
+        c.seek(Start(offset as u64))?;
+        let mut string = Vec::new();
+        for _ in 1..=size {
+            string.push(c.read_ne::<u16>()? ^ key as u16);
+            key = (key + 0x493d) & 0xFFFF;
+        }
+        if string.first() == Some(&0xF100) {
+            todo!("handle compression")
+        }
+        let mut s = String::new();
+        let mut chars = string.into_iter();
+        while let Some(c) = chars.next() {
+            if c == 0xFFFF {
+                break;
+            } else if c == 0xFFFE {
+                let n = chars.next().unwrap();
+                let count = chars.next().unwrap();
+                dbg!(count);
+                s.push_str("VAR{");
+                s.push_str(&format!("{n:x}"));
+                for _ in 0..count {
+                    s.push(':');
+                    s.push_str(&chars.next().unwrap().to_string());
+                }
+                s.push('}');
+            } else if c == 0xE000 {
+                s.push('\n');
+            } else if c == 0x25BC || c == 0x25BD {
+                s.push_str("{PROMPT}");
+            } else {
+                s.push(CHARSET[c as usize]);
+            }
+        }
+        println!("String {i}: {s}\n")
     }
 
     Ok(())
