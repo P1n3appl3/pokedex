@@ -1,8 +1,7 @@
 // http://problemkaputt.de/gbatek-ds-cartridge-nitrorom-and-nitroarc-file-systems.htm
 use std::{
     fmt::{self, Debug, Display, Formatter},
-    io::{Cursor, Read, Seek, SeekFrom::Start},
-    os::unix::ffi::OsStrExt,
+    io::{Cursor, Seek, SeekFrom::Start},
     str::Utf8Error,
 };
 
@@ -51,8 +50,11 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result
                         // if i != 615 {
                         //     continue;
                         // }
+                        if i != 559 {
+                            continue;
+                        }
                         println!(
-                            "{i} 0x{:X} {}",
+                            "===== {i} 0x{:X} {}",
                             f.start + file.start + img_start as u32,
                             Bytes(f.end - f.start)
                         );
@@ -82,7 +84,6 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result
     Ok(())
 }
 
-// transcribed to rust straight from
 // https://projectpokemon.org/rawdb/platinum/formats/msg.php
 fn decode_msg(bytes: &[u8]) -> Result<()> {
     let mut c = Cursor::new(bytes);
@@ -90,11 +91,10 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
     let seed: u16 = c.read_ne()?;
     let mut offsets = Vec::new();
     let mut sizes = Vec::new();
-    // let mut strings = Vec::new();
 
     for i in 1..=count {
         let temp = seed as u64 * i as u64;
-        let key = ((temp * 0x2fd) & 0xFFFF) | ((temp * 0x2FD0000) & 0xFFFF0000);
+        let key = ((temp * 0x2FD) & 0xFFFF) | ((temp * 0x2FD0000) & 0xFFFF0000);
         offsets.push(c.read_le::<u32>()? ^ key as u32);
         sizes.push(c.read_le::<u32>()? ^ key as u32);
     }
@@ -107,10 +107,36 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
         let mut string = Vec::new();
         for _ in 1..=size {
             string.push(c.read_ne::<u16>()? ^ key as u16);
-            key = (key + 0x493d) & 0xFFFF;
+            key = (key + 0x493D) & 0xFFFF;
         }
         if string.first() == Some(&0xF100) {
-            todo!("handle compression")
+            // if i == 1 {
+            //     continue;
+            // }
+            dbg!(&string[1..]);
+            let mut new = Vec::new();
+            let mut container = 0u32;
+            let mut bit = 0;
+            let mut j = 1;
+            loop {
+                if bit <= 9 {
+                    if j >= string.len() {
+                        break;
+                    }
+                    container <<= 16;
+                    container |= string[j] as u32;
+                    // println!("popped {:04x}", string[j]);
+                    bit += 16;
+                    j += 1;
+                }
+                // println!("{bit}, {container:024b} {:09b}", container >> (bit - 9));
+                let temp = (container >> (bit - 9)) & 0x1FF;
+                // println!("extracted {temp}");
+                new.push(((container >> (bit - 9)) & 0x1FF) as u16);
+                bit -= 9;
+                container &= (1 << bit) - 1;
+            }
+            string = new;
         }
         let mut s = String::new();
         let mut chars = string.into_iter();
@@ -120,9 +146,8 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
             } else if c == 0xFFFE {
                 let n = chars.next().unwrap();
                 let count = chars.next().unwrap();
-                dbg!(count);
                 s.push_str("VAR{");
-                s.push_str(&format!("{n:x}"));
+                s.push_str(&format!("0x{n:x}"));
                 for _ in 0..count {
                     s.push(':');
                     s.push_str(&chars.next().unwrap().to_string());
@@ -131,12 +156,16 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
             } else if c == 0xE000 {
                 s.push('\n');
             } else if c == 0x25BC || c == 0x25BD {
-                s.push_str("{PROMPT}");
+                s.push('\r');
+            } else if c == 0x1E0 {
+                s.push_str("ᴾₖ");
+            } else if c == 0x1E1 {
+                s.push_str("ᴹₙ");
             } else {
                 s.push(CHARSET[c as usize]);
             }
         }
-        println!("String {i}: {s}\n")
+        println!("String {i}: {s:?}")
     }
 
     Ok(())

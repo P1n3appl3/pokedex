@@ -58,6 +58,7 @@ Functionality:
   - 2 frame box sprite animations seem doable, and I'll at least get static versions of both large frames but probably not the more dynamic animations from emerald and onward.
   - ability/learnset
 - type chart
+- region
 - cli
   - hyphen option completion, otherwise name/number(id) and gender/form for second positional arg
 
