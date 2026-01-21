@@ -47,12 +47,6 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result
                     let narc: Narc = c.read_ne()?;
                     let img_start = c.position() as u32 + narc.fnt_size;
                     for (i, f) in narc.fat.iter().enumerate() {
-                        // if i != 615 {
-                        //     continue;
-                        // }
-                        if i != 559 {
-                            continue;
-                        }
                         println!(
                             "===== {i} 0x{:X} {}",
                             f.start + file.start + img_start as u32,
@@ -110,31 +104,28 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
             key = (key + 0x493D) & 0xFFFF;
         }
         if string.first() == Some(&0xF100) {
-            // if i == 1 {
-            //     continue;
-            // }
             dbg!(&string[1..]);
             let mut new = Vec::new();
             let mut container = 0u32;
             let mut bit = 0;
-            let mut j = 1;
+            let mut chars = string.iter().skip(1).take_while(|&&c| c != 0xFFFF);
             loop {
-                if bit <= 9 {
-                    if j >= string.len() {
-                        break;
-                    }
-                    container <<= 16;
-                    container |= string[j] as u32;
-                    // println!("popped {:04x}", string[j]);
-                    bit += 16;
-                    j += 1;
+                if bit < 9 {
+                    let Some(&c) = chars.next() else { break };
+                    container &= (1 << bit) - 1;
+                    container |= (c as u32) << bit;
+                    // println!("popped {:04x}", c);
+                    bit += 15;
                 }
                 // println!("{bit}, {container:024b} {:09b}", container >> (bit - 9));
-                let temp = (container >> (bit - 9)) & 0x1FF;
+                let temp = container & 0x1FF;
                 // println!("extracted {temp}");
-                new.push(((container >> (bit - 9)) & 0x1FF) as u16);
+                if 0b1_1111_1111 == temp {
+                    break;
+                }
+                new.push(temp as u16);
                 bit -= 9;
-                container &= (1 << bit) - 1;
+                container >>= 9;
             }
             string = new;
         }
@@ -161,6 +152,8 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
                 s.push_str("ᴾₖ");
             } else if c == 0x1E1 {
                 s.push_str("ᴹₙ");
+            } else if c as usize >= CHARSET.len() {
+                s.push('\u{FFFD}');
             } else {
                 s.push(CHARSET[c as usize]);
             }
