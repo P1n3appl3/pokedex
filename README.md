@@ -70,6 +70,7 @@ Functionality:
   - single and double type effectivenesses
 - move coverage calculator?
 - search for mons that can learn certain move(s) alongside certain abilities with certain type(s), filter thresholds or sort by stats?
+  - [this cli pokedex](https://github.com/purplecraft999/rsdex) has some cute filter options
 
 ## References
 
@@ -80,6 +81,7 @@ Functionality:
 - data format [notes and dumps](https://projectpokemon.org/rawdb) for all gen 4 games
 - another [ds rom header breakdown](http://dsibrew.org/wiki/DSi_cartridge_header) with the extra dsi bits (maybe relevant if I ever want to support b/w/b2/w2)
 - [list](https://gist.github.com/eevee/15a92e26088d79a77fca) of pokemon with forms
+- [uxie](https://github.com/KalaayPT/uxie) is a project that implements most of the functionality I'd like to write. If I weren't writing this tool for fun I'd just use this as a library.
 
 eevee's blog posts:
 - https://eev.ee/blog/2016/08/05/storing-pok%C3%A9mon-without-sql
@@ -103,18 +105,23 @@ hacking tools/editors that probably already have all the info I want:
 
 other terminal pokemon sprite renderers:
 - https://github.com/Tenchi2xh/pokedex-cli
-- https://github.com/yannjor/krabby
+- https://github.com/yannjor/krabby and [this fork](https://github.com/altair-39/kingler)
 - https://github.com/talwat/pokeget-rs
 - https://github.com/31marcosalsa/pokeTerm
 - https://github.com/Findarato/pokemon-colorscripts
 - https://github.com/possatti/pokemonsay
 - https://github.com/HRKings/pokemonsay-newgenerations
 
+msg file string parsing:
+- https://github.com/yakoswg/chatot
+- https://codeberg.org/AyashiBox/pkmn-strings
+
 possible online sources for fallback data that I don't derive like encounter tables:
 - veekun (TODO: check if their database has this and maybe use it offline?)
 - serebii
 - bulbapedia
 - pokemondb
+- pokeapi using [either](https://github.com/zitronenjoghurt/poke-data) of [these](https://github.com/mlemesle/rustemon) libraries
 
 existing sprite databases to check against:
 - [veekun's](http://git.veekun.com/pokedex-media.git/tree/HEAD:/pokemon/icons) (they also have a convenient [separate download](https://veekun.com/dex/downloads))

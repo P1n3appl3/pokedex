@@ -79,6 +79,7 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result
 }
 
 // https://projectpokemon.org/rawdb/platinum/formats/msg.php
+// https://github.com/projectpokemon/ppre_legacy/blob/master/poketext.py
 fn decode_msg(bytes: &[u8]) -> Result<()> {
     let mut c = Cursor::new(bytes);
     let count: u16 = c.read_ne()?;
@@ -152,8 +153,6 @@ fn decode_msg(bytes: &[u8]) -> Result<()> {
                 s.push_str("ᴾₖ");
             } else if c == 0x1E1 {
                 s.push_str("ᴹₙ");
-            } else if c as usize >= CHARSET.len() {
-                s.push('\u{FFFD}');
             } else {
                 s.push(CHARSET[c as usize]);
             }
