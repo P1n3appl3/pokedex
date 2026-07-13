@@ -1,16 +1,16 @@
 pub mod banner;
 pub mod charset;
 pub mod fs;
+pub mod msg;
 
 use std::{
     fmt::{self, Debug, Formatter},
-    mem,
     str::Utf8Error,
     string::FromUtf16Error,
 };
 
 use binrw::{BinRead, NullString, NullWideString};
-use fs::{FatEntry, FileAllocationTable};
+use fs::FileAllocationTable;
 use smol_str::SmolStr;
 
 // https://problemkaputt.de/gbatek-ds-cartridge-header.htm
@@ -55,25 +55,25 @@ pub struct NdsHeader {
 #[br(magic = b"NARC")]
 pub struct Narc {
     #[br(assert(byte_order == 0xFFFE))]
-    byte_order: u16,
+    pub byte_order: u16,
     #[br(assert(version == 0x0100))]
-    version: u16,
-    file_size: u32,
+    pub version: u16,
+    pub file_size: u32,
     #[br(assert(chunk_size == 16))]
-    chunk_size: u16,
+    pub chunk_size: u16,
     #[br(assert(num_chunks == 3))]
-    num_chunks: u16,
+    pub num_chunks: u16,
     #[br(magic = b"BTAF")] // chunk name (file allocation table block)
-    fat_size: u32, // (including ^ and this field, so -8 for actual)
-    num_files: u16,
+    pub fat_size: u32, // (including ^ and this field, so -8 for actual)
+    pub num_files: u16,
     #[br(magic = 0u16)] // reserved
     #[br(count = num_files)]
-    fat: FileAllocationTable,
+    pub fat: FileAllocationTable,
     #[br(magic = b"BTNF")] // chunk name (file name table block)
-    fnt_size: u32, // (including ^ and this field, so -8 for actual)
+    pub fnt_size: u32, // (including ^ and this field, so -8 for actual)
 
     // #[br(align_after = 4)]
-    fnt: (),
+    pub fnt: (),
     // #[br(magic = b"GMIF")] // chunk name (file image block)
     // img_size: u32, // (including ^ and this field, so -8 for actual)
     // img_data: (),

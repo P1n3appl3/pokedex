@@ -5,14 +5,33 @@ use std::{
     str::Utf8Error,
 };
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use binrw::{BinRead, BinReaderExt};
 use modular_bitfield_msb::prelude::*;
 use smol_str::SmolStr;
 
-use crate::{Narc, Slice, charset::CHARSET};
+use crate::Slice;
 
-pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result<()> {
+pub trait FsVisitor {
+    fn push_dir(&mut self, _name: SmolStr, _id: u16) -> bool {
+        true
+    }
+
+    fn pop_dir(&mut self) -> bool {
+        true
+    }
+
+    fn file(&mut self, _name: SmolStr, _contents: &[u8], _id: u16) -> bool {
+        true
+    }
+}
+
+pub fn parse_nitro_fs<T: FsVisitor>(
+    fnt: Slice,
+    fat: Slice,
+    f: &mut Cursor<Vec<u8>>,
+    v: &mut T,
+) -> Result<(FileAllocationTable, Vec<Directory>)> {
     let mut files: FileAllocationTable = Vec::new();
     f.seek(Start(fat.offset as u64))?;
     for _ in 0..fat.size as usize / std::mem::size_of::<FatEntry>() {
@@ -32,41 +51,20 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result
         loop {
             let mut e: Entry = f.read_ne()?;
             if e.header.len() == 0 {
+                v.pop_dir();
                 debug_assert!(!e.header.is_dir());
                 break;
             }
-            // print!("{}", "  ".repeat(stack.len()));
             if !e.header.is_dir() {
                 e.id = cur_id;
                 cur_id += 1;
                 let file = &files[e.id as usize];
-                let size = Bytes(file.end - file.start).to_string();
-                if e.name == "msg.narc" {
-                    let raw = &f.get_ref()[file.start as usize..file.end as usize];
-                    let mut c = Cursor::new(raw);
-                    let narc: Narc = c.read_ne()?;
-                    let img_start = c.position() as u32 + narc.fnt_size;
-                    for (i, f) in narc.fat.iter().enumerate() {
-                        println!(
-                            "===== {i} 0x{:X} {}",
-                            f.start + file.start + img_start as u32,
-                            Bytes(f.end - f.start)
-                        );
-                        decode_msg(
-                            &raw[(img_start + f.start) as usize
-                                ..(img_start + f.end) as usize],
-                        )?;
-                    }
-                    return Ok(());
+                let raw = &f.get_ref()[file.start as usize..file.end as usize];
+                if !v.file(e.name.clone(), raw, e.id) {
+                    return Err(anyhow!("terminated early"));
                 }
-                // println!(
-                //     "\x1b[3m{}\x1b[0m{}\x1b[2m{size:>8} @ 0x{:04x}\x1b[0m",
-                //     e.name,
-                //     " ".repeat(60 - e.name.len() - stack.len() * 2),
-                //     e.id,
-                // );
             } else {
-                // println!("\x1b[1m{}\x1b[0m \x1b[2m(0x{:x})\x1b[0m", e.name, e.id);
+                v.push_dir(e.name.clone(), e.id);
                 stack.push((f.position(), cur_id));
                 let dir = dirs[(e.id & 0xFFF) as usize];
                 stack.push(((fnt.offset + dir.subtable_offset) as u64, dir.first_id));
@@ -75,96 +73,11 @@ pub fn parse_nitro_fs(fnt: Slice, fat: Slice, f: &mut Cursor<Vec<u8>>) -> Result
         }
     }
 
-    Ok(())
-}
-
-// https://projectpokemon.org/rawdb/platinum/formats/msg.php
-// https://github.com/projectpokemon/ppre_legacy/blob/master/poketext.py
-fn decode_msg(bytes: &[u8]) -> Result<()> {
-    let mut c = Cursor::new(bytes);
-    let count: u16 = c.read_ne()?;
-    let seed: u16 = c.read_ne()?;
-    let mut offsets = Vec::new();
-    let mut sizes = Vec::new();
-
-    for i in 1..=count {
-        let temp = seed as u64 * i as u64;
-        let key = ((temp * 0x2FD) & 0xFFFF) | ((temp * 0x2FD0000) & 0xFFFF0000);
-        offsets.push(c.read_le::<u32>()? ^ key as u32);
-        sizes.push(c.read_le::<u32>()? ^ key as u32);
-    }
-
-    for i in 1..=count {
-        let offset = offsets[i as usize - 1];
-        let size = sizes[i as usize - 1];
-        let mut key = (0x91BD3 * i as u32) & 0xFFFF;
-        c.seek(Start(offset as u64))?;
-        let mut string = Vec::new();
-        for _ in 1..=size {
-            string.push(c.read_ne::<u16>()? ^ key as u16);
-            key = (key + 0x493D) & 0xFFFF;
-        }
-        if string.first() == Some(&0xF100) {
-            dbg!(&string[1..]);
-            let mut new = Vec::new();
-            let mut container = 0u32;
-            let mut bit = 0;
-            let mut chars = string.iter().skip(1).take_while(|&&c| c != 0xFFFF);
-            loop {
-                if bit < 9 {
-                    let Some(&c) = chars.next() else { break };
-                    container &= (1 << bit) - 1;
-                    container |= (c as u32) << bit;
-                    // println!("popped {:04x}", c);
-                    bit += 15;
-                }
-                // println!("{bit}, {container:024b} {:09b}", container >> (bit - 9));
-                let temp = container & 0x1FF;
-                // println!("extracted {temp}");
-                if 0b1_1111_1111 == temp {
-                    break;
-                }
-                new.push(temp as u16);
-                bit -= 9;
-                container >>= 9;
-            }
-            string = new;
-        }
-        let mut s = String::new();
-        let mut chars = string.into_iter();
-        while let Some(c) = chars.next() {
-            if c == 0xFFFF {
-                break;
-            } else if c == 0xFFFE {
-                let n = chars.next().unwrap();
-                let count = chars.next().unwrap();
-                s.push_str("VAR{");
-                s.push_str(&format!("0x{n:x}"));
-                for _ in 0..count {
-                    s.push(':');
-                    s.push_str(&chars.next().unwrap().to_string());
-                }
-                s.push('}');
-            } else if c == 0xE000 {
-                s.push('\n');
-            } else if c == 0x25BC || c == 0x25BD {
-                s.push('\r');
-            } else if c == 0x1E0 {
-                s.push_str("ᴾₖ");
-            } else if c == 0x1E1 {
-                s.push_str("ᴹₙ");
-            } else {
-                s.push(CHARSET[c as usize]);
-            }
-        }
-        println!("String {i}: {s:?}")
-    }
-
-    Ok(())
+    Ok((files, dirs))
 }
 
 #[derive(Copy, Clone, Default, Debug)]
-struct Bytes(u32);
+pub struct Bytes(pub u32);
 impl Display for Bytes {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let n = self.0;
@@ -224,7 +137,7 @@ fn smol_str(s: Vec<u8>) -> Result<SmolStr, Utf8Error> {
 
 #[derive(BinRead, Debug, Copy, Clone)]
 pub struct FatEntry {
-    start: u32,
-    end: u32,
+    pub start: u32,
+    pub end: u32,
 }
 pub type FileAllocationTable = Vec<FatEntry>;

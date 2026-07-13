@@ -1,4 +1,6 @@
-I'm Feeling restless at work, haven't gotten to write a non-trivial amount of rust recently. I've also been doing a LOT of small tweaks to various software I use as I bring up my new laptop and I'm exhausted from that and want to stop worrying about those big programs and their various shortcomings by writing a teeny program that perfectly satisfies my use case.
+## Why does this exist
+
+I'm Feeling Restless at work. I haven't gotten to write a non-trivial amount of rust recently. I've also been doing a LOT of small tweaks to various software I use as I bring up my new laptop and I'm exhausted from that and want to stop worrying about those big programs and their various shortcomings by writing a teeny program that perfectly satisfies my use case.
 
 [eevee's blog post](https://eev.ee/blog/2017/08/02/datamining-pokemon/) does this for the full-size sprites, but I want the smaller menu/box sprites to display in my terminal. once I realized this I decided to go do it myself for fun. [eevee's toolkit](https://github.com/eevee/porigon-z/blob/master/porigonz/nds/util/sprites.py) for data extraction (or the [hg/ss decompilation](https://github.com/pret/pokeheartgold/blob/master/include/constants/sprites.h)) can probably get those icon-sized sprites too, but I didn't bother checking.
 
@@ -17,16 +19,10 @@ Side note: it's cool that `file` has support for these ROMs, I went and [found t
 There's lots of pokemon games and they've got lots of art/data, but the _maximum_ I'd be interested in covering are:
 
 Games:
-- Fire Red
-- Leaf Green
-- Ruby
-- Sapphire
-- Emerald
-- Heart Gold
-- Soul Silver
-- Diamond
-- Pearl
-- Platinum
+- Fire Red/Leaf Green
+- Ruby/Sapphire/Emerald
+- Heart Gold/Soul Silver
+- Diamond/Pearl/Platinum
 - maybe b/w/b2/w2?? after i play them?
 
 Info (priority list):
@@ -127,3 +123,30 @@ existing sprite databases to check against:
 - [veekun's](http://git.veekun.com/pokedex-media.git/tree/HEAD:/pokemon/icons) (they also have a convenient [separate download](https://veekun.com/dex/downloads))
 - [pokesprite](https://msikma.github.io/pokesprite/)
 - pokemondb/pokemondb/serebii have structured urls so i could scrape
+
+## notes
+
+- msg.narc (checked in diamond, soul silver, and platinum)
+  - 16 names
+  - 190 natures
+  - 192 pokemon nickname suggestions
+  - 205 statuses
+  - 310 names... japanese?
+  - 326 trade pokemon nicknames
+  - 343 item desc
+  - 344 item
+  - 362 POKEMON
+  - 373 berry types
+  - 382 place names
+  - 414 poffin types
+  - 495 stat names
+  - 552 abilities
+  - 554 ability descriptions
+  - 559 trainers
+  - 560 trainer titles
+  - 565 types
+  - 588 moves
+  - 615 pokedex entry
+  - 619 weight
+  - 620 height
+  - 621 "___ pokemon"
