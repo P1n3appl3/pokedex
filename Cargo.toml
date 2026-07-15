@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = "1"
 binrw = "0.15"
+camino = "1"
 modular-bitfield-msb = "0.11"
 owo-colors = "4"
 smol_str = "0.3"
+static_assertions = "1"

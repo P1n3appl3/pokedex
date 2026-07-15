@@ -1,16 +1,49 @@
 // http://problemkaputt.de/gbatek-ds-cartridge-nitrorom-and-nitroarc-file-systems.htm
 use std::{
+    collections::HashMap,
     fmt::{self, Debug, Display, Formatter},
     io::{Cursor, Seek, SeekFrom::Start},
     str::Utf8Error,
 };
 
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use binrw::{BinRead, BinReaderExt};
+use camino::Utf8Path;
 use modular_bitfield_msb::prelude::*;
 use smol_str::SmolStr;
 
-use crate::Slice;
+use crate::{NdsHeader, Slice};
+
+#[derive(Default, Clone, Debug)]
+pub struct NitroFs<'a>(HashMap<SmolStr, FsEntry<'a>>);
+
+#[derive(Debug, Clone)]
+pub enum FsEntry<'a> {
+    File(&'a [u8]),
+    Dir(HashMap<SmolStr, FsEntry<'a>>),
+}
+
+impl<'a> NitroFs<'a> {
+    pub fn new(rom: &[u8]) -> Result<Self> {
+        let mut cursor = Cursor::new(rom);
+        let header: NdsHeader = cursor.read_ne()?;
+        let mut collector = Collector::default();
+        parse_nitro_fs(header.fnt, header.fat, &mut cursor, &mut collector)?;
+        Ok(collector.fs)
+    }
+
+    pub fn get(&self, path: &Utf8Path) -> Option<&FsEntry<'a>> {
+        let mut components = path.components();
+        let mut cur: &FsEntry = self.0.get(components.next()?.as_str())?;
+        for c in components {
+            let FsEntry::Dir(map) = cur else {
+                return None;
+            };
+            cur = map.get(c.as_str())?;
+        }
+        Some(cur)
+    }
+}
 
 pub trait FsVisitor {
     fn push_dir(&mut self, _name: SmolStr, _id: u16) -> bool {
@@ -26,12 +59,48 @@ pub trait FsVisitor {
     }
 }
 
-pub fn parse_nitro_fs<T: FsVisitor>(
+#[derive(Default)]
+struct Collector<'a> {
+    fs: NitroFs<'a>,
+    stack: Vec<SmolStr>,
+}
+
+impl<'a> Collector<'a> {
+    fn push(&mut self, name: SmolStr, new: FsEntry<'a>) {
+        let mut cur = &mut self.fs.0;
+        for component in &self.stack {
+            let FsEntry::Dir(next) = cur.get_mut(component).unwrap() else {
+                unreachable!("")
+            };
+            cur = next
+        }
+        cur.insert(name, new);
+    }
+}
+
+impl<'a> FsVisitor for Collector<'a> {
+    fn push_dir(&mut self, name: SmolStr, _id: u16) -> bool {
+        self.push(name, FsEntry::Dir(Default::default()));
+        true
+    }
+
+    fn pop_dir(&mut self) -> bool {
+        self.stack.pop();
+        true
+    }
+
+    fn file(&mut self, name: SmolStr, contents: &[u8], _id: u16) -> bool {
+        // self.push(name, FsEntry::File(contents));
+        true
+    }
+}
+
+pub fn parse_nitro_fs<T: FsVisitor, U: AsRef<[u8]>>(
     fnt: Slice,
     fat: Slice,
-    f: &mut Cursor<Vec<u8>>,
+    f: &mut Cursor<U>,
     v: &mut T,
-) -> Result<(FileAllocationTable, Vec<Directory>)> {
+) -> Result<()> {
     let mut files: FileAllocationTable = Vec::new();
     f.seek(Start(fat.offset as u64))?;
     for _ in 0..fat.size as usize / std::mem::size_of::<FatEntry>() {
@@ -51,7 +120,9 @@ pub fn parse_nitro_fs<T: FsVisitor>(
         loop {
             let mut e: Entry = f.read_ne()?;
             if e.header.len() == 0 {
-                v.pop_dir();
+                if !v.pop_dir() {
+                    return Ok(());
+                };
                 debug_assert!(!e.header.is_dir());
                 break;
             }
@@ -59,12 +130,14 @@ pub fn parse_nitro_fs<T: FsVisitor>(
                 e.id = cur_id;
                 cur_id += 1;
                 let file = &files[e.id as usize];
-                let raw = &f.get_ref()[file.start as usize..file.end as usize];
+                let raw = &f.get_ref().as_ref()[file.start as usize..file.end as usize];
                 if !v.file(e.name.clone(), raw, e.id) {
-                    return Err(anyhow!("terminated early"));
+                    return Ok(());
                 }
             } else {
-                v.push_dir(e.name.clone(), e.id);
+                if !v.push_dir(e.name.clone(), e.id) {
+                    return Ok(());
+                };
                 stack.push((f.position(), cur_id));
                 let dir = dirs[(e.id & 0xFFF) as usize];
                 stack.push(((fnt.offset + dir.subtable_offset) as u64, dir.first_id));
@@ -73,8 +146,10 @@ pub fn parse_nitro_fs<T: FsVisitor>(
         }
     }
 
-    Ok((files, dirs))
+    Ok(())
 }
+
+// pub struct FsCollector(HashMap<Entry, Entry>);
 
 #[derive(Copy, Clone, Default, Debug)]
 pub struct Bytes(pub u32);
@@ -94,10 +169,10 @@ impl Display for Bytes {
 }
 
 #[derive(BinRead, Debug, Copy, Clone)]
-pub struct Directory {
-    pub subtable_offset: u32,
-    pub first_id: u16,
-    pub parent_id: u16, // for root dir this is total dir number
+struct Directory {
+    subtable_offset: u32,
+    first_id: u16,
+    parent_id: u16, // for root dir this is total dir number
 }
 
 #[bitfield]
@@ -110,12 +185,12 @@ pub struct EntryHeader {
 
 // TODO: enum with is_dir bool as magic for variant selection
 #[derive(BinRead, Clone)]
-pub struct Entry {
-    pub header: EntryHeader,
+struct Entry {
+    header: EntryHeader,
     #[br(count = header.len() as usize, try_map = smol_str)]
-    pub name: SmolStr,
+    name: SmolStr,
     #[br(if(header.is_dir()))] // else increment starting from first_id
-    pub id: u16,
+    id: u16,
 }
 
 impl Debug for Entry {

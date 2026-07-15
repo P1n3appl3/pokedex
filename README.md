@@ -145,6 +145,7 @@ existing sprite databases to check against:
   - 559 trainers
   - 560 trainer titles
   - 565 types
+  - 587 move descriptions
   - 588 moves
   - 615 pokedex entry
   - 619 weight
