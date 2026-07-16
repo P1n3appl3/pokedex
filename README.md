@@ -128,7 +128,7 @@ existing sprite databases to check against:
 
 ## notes
 
-- msg.narc (i checked in diamond, soul silver, and platinum)
+- msg.narc (i looked in diamond, soul silver, and platinum) TODO: check, since according to https://ds-pokemon-hacking.github.io/docs/generation-iv/guides/editing_moves/#move-name-description--battle-texts, the narc entries are different per game for various things
   - 16 names
   - 190 natures
   - 192 pokemon nickname suggestions
@@ -153,3 +153,4 @@ existing sprite databases to check against:
   - 619 weight
   - 620 height
   - 621 "___ pokemon"
+- in diamond and pearl hypnosis accuracy is 70, but in all the other gen 4 games it's 60. that's the only difference in their move data tables
