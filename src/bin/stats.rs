@@ -19,13 +19,13 @@ fn main() -> Result<()> {
     };
 
     let mut c = Cursor::new(contents);
-    let narc: Narc = c.read_ne().unwrap();
+    let narc: Narc = c.read_le().unwrap();
     let img_start = c.position() as u32 + narc.fnt_size;
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         let mut c = Cursor::new(entry);
         println!("{i}: {}", pretty_hex::simple_hex(&entry));
-        let pokemon: Pokemon = c.read_ne().unwrap();
+        let pokemon: Pokemon = c.read_le().unwrap();
         println!("\x1b[1m===== {i} {:#?}\x1b[0m", pokemon);
     }
 
@@ -41,13 +41,13 @@ fn main() -> Result<()> {
     };
 
     let mut c = Cursor::new(contents);
-    let narc: Narc = c.read_ne().unwrap();
+    let narc: Narc = c.read_le().unwrap();
     let img_start = c.position() as u32 + narc.fnt_size;
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         let mut c = Cursor::new(entry);
         println!("{i}: {}", pretty_hex::simple_hex(&entry));
-        let evos: Evos = c.read_ne().unwrap();
+        let evos: Evos = c.read_le().unwrap();
         println!("\x1b[1m===== {i} {:#?}\x1b[0m", evos.0);
     }
 

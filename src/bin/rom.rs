@@ -17,7 +17,7 @@ fn main() -> Result<()> {
     let rom = fs::read(rom_path).context("couldn't find ROM")?;
 
     let mut cursor = Cursor::new(&rom[..]);
-    let header: NdsHeader = cursor.read_ne()?;
+    let header: NdsHeader = cursor.read_le()?;
     cursor.seek(Start(header.banner_offset as u64))?;
 
     let mut v = TreeVisitor(0);

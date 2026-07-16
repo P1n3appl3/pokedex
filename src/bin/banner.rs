@@ -13,11 +13,11 @@ fn main() -> Result<()> {
     let rom = fs::read(rom_path).context("couldn't find ROM")?;
     let mut cursor = Cursor::new(rom);
 
-    let header: NdsHeader = cursor.read_ne()?;
+    let header: NdsHeader = cursor.read_le()?;
     println!("{} ({})", &header.title, header.game_code);
 
     cursor.seek(Start(header.banner_offset as u64))?;
-    let banner: Banner = cursor.read_ne()?;
+    let banner: Banner = cursor.read_le()?;
     println!("{:#x?}", &banner.icon);
 
     Ok(())

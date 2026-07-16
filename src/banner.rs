@@ -4,7 +4,7 @@ use binrw::BinRead;
 use owo_colors::{OwoColorize, Rgb};
 use smol_str::SmolStr;
 
-use crate::wide_smol_str;
+use crate::{Color, wide_smol_str};
 
 // https://problemkaputt.de/gbatek-ds-cartridge-icon-title.htm
 #[derive(Clone, Debug, BinRead)]
@@ -36,9 +36,6 @@ pub struct Icon {
 
 // each entry is a nibble which indexes into the 16-color palette
 type Tile = [[u8; 4]; 8];
-
-#[derive(Debug, Copy, Clone, BinRead)]
-pub struct Color(u16); // bgr555, i'll use top bit for alpha?
 
 impl Icon {
     fn get(&self, x: usize, y: usize) -> Color {

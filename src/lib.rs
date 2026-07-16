@@ -2,6 +2,7 @@ pub mod banner;
 pub mod charset;
 pub mod fs;
 pub mod msg;
+pub mod sprite;
 
 use std::{
     fmt::{self, Debug, Formatter},
@@ -123,3 +124,6 @@ impl Debug for Slice {
         write!(f, "[u8; 0x{:x}] @ 0x{:x}", self.size, self.offset)
     }
 }
+
+#[derive(Debug, Copy, Clone, BinRead)]
+pub struct Color(u16); // bgr555, i'll use top bit for alpha?

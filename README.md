@@ -80,6 +80,7 @@ Functionality:
 - another [ds rom header breakdown](http://dsibrew.org/wiki/DSi_cartridge_header) with the extra dsi bits (maybe relevant if I ever want to support b/w/b2/w2)
 - [list](https://gist.github.com/eevee/15a92e26088d79a77fca) of pokemon with forms
 - [uxie](https://github.com/KalaayPT/uxie) is a project that implements most of the functionality I'd like to write. If I weren't writing this tool for fun I'd just use this as a library.
+- [backup](https://loveemu.hatenablog.com/entry/20091002/nds_formats) of a great resource on ds file formats which includes the formats used for sprites
 
 eevee's blog posts:
 - https://eev.ee/blog/2016/08/05/storing-pok%C3%A9mon-without-sql

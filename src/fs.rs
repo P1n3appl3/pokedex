@@ -26,7 +26,7 @@ pub enum FsEntry<'a> {
 impl<'a> NitroFs<'a> {
     pub fn new(rom: &'a [u8]) -> Result<Self> {
         let mut cursor = Cursor::new(rom);
-        let header: NdsHeader = cursor.read_ne()?;
+        let header: NdsHeader = cursor.read_le()?;
         let mut collector = Collector::default();
         parse_nitro_fs(header.fnt, header.fat, &mut cursor, &mut collector)?;
         Ok(collector.fs)
@@ -105,13 +105,13 @@ pub fn parse_nitro_fs<'a, T: FsVisitor<'a>>(
     let mut files: FileAllocationTable = Vec::new();
     f.seek(Start(fat.offset as u64))?;
     for _ in 0..fat.size as usize / std::mem::size_of::<FatEntry>() {
-        files.push(f.read_ne()?);
+        files.push(f.read_le()?);
     }
 
     f.seek(Start(fnt.offset as u64))?;
-    let mut dirs: Vec<Directory> = vec![f.read_ne()?];
+    let mut dirs: Vec<Directory> = vec![f.read_le()?];
     for _ in 0..dirs[0].parent_id - 1 {
-        dirs.push(f.read_ne()?)
+        dirs.push(f.read_le()?)
     }
 
     let root = dirs[0];
@@ -119,7 +119,7 @@ pub fn parse_nitro_fs<'a, T: FsVisitor<'a>>(
     while let Some((pos, mut cur_id)) = stack.pop() {
         f.seek(Start(pos))?;
         loop {
-            let mut e: Entry = f.read_ne()?;
+            let mut e: Entry = f.read_le()?;
             if e.header.len() == 0 {
                 if !v.pop_dir() {
                     return Ok(());

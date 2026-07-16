@@ -9,8 +9,8 @@ use crate::charset::CHARSET;
 // https://github.com/projectpokemon/ppre_legacy/blob/master/poketext.py
 pub fn decode_msg(bytes: &[u8]) -> Result<Vec<String>> {
     let mut c = Cursor::new(bytes);
-    let count: u16 = c.read_ne()?;
-    let seed: u16 = c.read_ne()?;
+    let count: u16 = c.read_le()?;
+    let seed: u16 = c.read_le()?;
 
     let mut offsets = Vec::new();
     let mut sizes = Vec::new();
@@ -29,7 +29,7 @@ pub fn decode_msg(bytes: &[u8]) -> Result<Vec<String>> {
         c.seek(Start(offset as u64))?;
         let mut string = Vec::new();
         for _ in 1..=size {
-            string.push(c.read_ne::<u16>()? ^ key as u16);
+            string.push(c.read_le::<u16>()? ^ key as u16);
             key = (key + 0x493D) & 0xFFFF;
         }
         if string.first() == Some(&0xF100) {

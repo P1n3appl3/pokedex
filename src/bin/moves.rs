@@ -18,13 +18,13 @@ fn main() -> Result<()> {
         panic!("wotbl.narc not found");
     };
     let mut c = Cursor::new(contents);
-    let narc: Narc = c.read_ne().unwrap();
+    let narc: Narc = c.read_le().unwrap();
     let img_start = c.position() as u32 + narc.fnt_size;
 
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         let mut c = Cursor::new(entry);
-        let learnset: LearnSet = c.read_ne().unwrap();
+        let learnset: LearnSet = c.read_le().unwrap();
         println!("\x1b[1m===== {i}\x1b[0m");
         println!("{}", pretty_hex::simple_hex(&entry));
         for set in &learnset.moves {
@@ -38,13 +38,13 @@ fn main() -> Result<()> {
         panic!("waza_tbl.narc not found");
     };
     let mut c = Cursor::new(contents);
-    let narc: Narc = c.read_ne().unwrap();
+    let narc: Narc = c.read_le().unwrap();
     let img_start = c.position() as u32 + narc.fnt_size;
 
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         let mut c = Cursor::new(entry);
-        let _move: Move = c.read_ne().unwrap();
+        let _move: Move = c.read_le().unwrap();
         println!("\x1b[1m===== {i} {:#?}\x1b[0m", _move);
     }
     Ok(())
