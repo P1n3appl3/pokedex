@@ -15,7 +15,7 @@ use smol_str::SmolStr;
 use crate::{NdsHeader, Slice};
 
 #[derive(Default, Clone, Debug)]
-pub struct NitroFs<'a>(HashMap<SmolStr, FsEntry<'a>>);
+pub struct NitroFs<'a>(pub HashMap<SmolStr, FsEntry<'a>>);
 
 #[derive(Debug, Clone)]
 pub enum FsEntry<'a> {
@@ -24,7 +24,7 @@ pub enum FsEntry<'a> {
 }
 
 impl<'a> NitroFs<'a> {
-    pub fn new(rom: &[u8]) -> Result<Self> {
+    pub fn new(rom: &'a [u8]) -> Result<Self> {
         let mut cursor = Cursor::new(rom);
         let header: NdsHeader = cursor.read_ne()?;
         let mut collector = Collector::default();
@@ -45,7 +45,7 @@ impl<'a> NitroFs<'a> {
     }
 }
 
-pub trait FsVisitor {
+pub trait FsVisitor<'a> {
     fn push_dir(&mut self, _name: SmolStr, _id: u16) -> bool {
         true
     }
@@ -54,7 +54,7 @@ pub trait FsVisitor {
         true
     }
 
-    fn file(&mut self, _name: SmolStr, _contents: &[u8], _id: u16) -> bool {
+    fn file(&mut self, _name: SmolStr, _contents: &'a [u8], _id: u16) -> bool {
         true
     }
 }
@@ -78,9 +78,10 @@ impl<'a> Collector<'a> {
     }
 }
 
-impl<'a> FsVisitor for Collector<'a> {
+impl<'a> FsVisitor<'a> for Collector<'a> {
     fn push_dir(&mut self, name: SmolStr, _id: u16) -> bool {
-        self.push(name, FsEntry::Dir(Default::default()));
+        self.push(name.clone(), FsEntry::Dir(Default::default()));
+        self.stack.push(name);
         true
     }
 
@@ -89,16 +90,16 @@ impl<'a> FsVisitor for Collector<'a> {
         true
     }
 
-    fn file(&mut self, name: SmolStr, contents: &[u8], _id: u16) -> bool {
-        // self.push(name, FsEntry::File(contents));
+    fn file(&mut self, name: SmolStr, contents: &'a [u8], _id: u16) -> bool {
+        self.push(name, FsEntry::File(contents));
         true
     }
 }
 
-pub fn parse_nitro_fs<T: FsVisitor, U: AsRef<[u8]>>(
+pub fn parse_nitro_fs<'a, T: FsVisitor<'a>>(
     fnt: Slice,
     fat: Slice,
-    f: &mut Cursor<U>,
+    f: &mut Cursor<&'a [u8]>,
     v: &mut T,
 ) -> Result<()> {
     let mut files: FileAllocationTable = Vec::new();
@@ -130,7 +131,7 @@ pub fn parse_nitro_fs<T: FsVisitor, U: AsRef<[u8]>>(
                 e.id = cur_id;
                 cur_id += 1;
                 let file = &files[e.id as usize];
-                let raw = &f.get_ref().as_ref()[file.start as usize..file.end as usize];
+                let raw = &f.get_ref()[file.start as usize..file.end as usize];
                 if !v.file(e.name.clone(), raw, e.id) {
                     return Ok(());
                 }

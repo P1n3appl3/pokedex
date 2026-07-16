@@ -35,7 +35,7 @@ Info (priority list):
 - hg/ss overworld sprites (2 frames for all 4 directions)
 - back sprites
 - pokeball/other item sprites
-- abilities?
+- abilities
 - moves? learnset/teachset/description/power/acc/probabilities
 
 Trainer teams with full level/stat/moveset info and the trainersprite would be cool but wayyyy too much work

@@ -16,7 +16,7 @@ fn main() -> Result<()> {
     let rom_path = env::args().nth(1).context("pass a ROM path")?;
     let rom = fs::read(rom_path).context("couldn't find ROM")?;
 
-    let mut cursor = Cursor::new(rom);
+    let mut cursor = Cursor::new(&rom[..]);
     let header: NdsHeader = cursor.read_ne()?;
     cursor.seek(Start(header.banner_offset as u64))?;
 
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
 
 struct TreeVisitor(usize);
 
-impl FsVisitor for TreeVisitor {
+impl<'a> FsVisitor<'a> for TreeVisitor {
     fn push_dir(&mut self, name: SmolStr, id: u16) -> bool {
         print!("{}", "  ".repeat(self.0));
         println!("\x1b[1m{}\x1b[0m \x1b[2m(0x{:x})\x1b[0m", name, id);
