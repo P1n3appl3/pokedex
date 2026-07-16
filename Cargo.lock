@@ -35,7 +35,7 @@ dependencies = [
  "owo-colors",
  "proc-macro2",
  "quote",
- "syn 2.0.114",
+ "syn",
 ]
 
 [[package]]
@@ -72,24 +72,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
-name = "modular-bitfield-msb"
-version = "0.11.2"
+name = "modular-bitfield"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4f8c4275b0126bb0086e739ee3210114e8f97965779de613d0e8c6bcf06ca5d"
+checksum = "2956e537fc68236d2aa048f55704f231cc93f1c4de42fe1ecb5bd7938061fc4a"
 dependencies = [
- "modular-bitfield-msb-impl",
+ "modular-bitfield-impl",
  "static_assertions",
 ]
 
 [[package]]
-name = "modular-bitfield-msb-impl"
-version = "0.11.2"
+name = "modular-bitfield-impl"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6239283b0bafd6b3a55a6a02bfce9a3e7fc6ebeffa6f75fe91a104267fcebbd"
+checksum = "59b43b4fd69e3437618106f7754f34021b831a514f9e1a98ae863cabcd8d8dad"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn",
 ]
 
 [[package]]
@@ -105,11 +105,18 @@ dependencies = [
  "anyhow",
  "binrw",
  "camino",
- "modular-bitfield-msb",
+ "modular-bitfield",
  "owo-colors",
+ "pretty-hex",
  "smol_str",
  "static_assertions",
 ]
+
+[[package]]
+name = "pretty-hex"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a65843dfefbafd3c879c683306959a6de478443ffe9c9adf02f5976432402d7"
 
 [[package]]
 name = "proc-macro2"
@@ -146,7 +153,7 @@ checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.114",
+ "syn",
 ]
 
 [[package]]
@@ -164,17 +171,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "syn"
-version = "1.0.109"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
 
 [[package]]
 name = "syn"

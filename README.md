@@ -75,6 +75,8 @@ Functionality:
 - [gen 3 color palettes](https://voliol.neocities.org/articles/genIIIpalettes) explanation
 - hgss had an unnamed filesystem but some resources like [this](https://projectpokemon.org/home/docs/gen-4/hgss-file-system-r21/) have guides to which file is which
 - data format [notes and dumps](https://projectpokemon.org/rawdb) for all gen 4 games
+- more detailed hg/ss data format [docs](https://hirotdk.neocities.org/FileSpecs#Pokemon) for hg/ss
+- rom hacking guide with [great info](https://ds-pokemon-hacking.github.io/docs/generation-iv/guides/editing_moves/#location) on movesets (if i wanted to do add move tutor support this is a good starting place)
 - another [ds rom header breakdown](http://dsibrew.org/wiki/DSi_cartridge_header) with the extra dsi bits (maybe relevant if I ever want to support b/w/b2/w2)
 - [list](https://gist.github.com/eevee/15a92e26088d79a77fca) of pokemon with forms
 - [uxie](https://github.com/KalaayPT/uxie) is a project that implements most of the functionality I'd like to write. If I weren't writing this tool for fun I'd just use this as a library.
@@ -126,7 +128,7 @@ existing sprite databases to check against:
 
 ## notes
 
-- msg.narc (checked in diamond, soul silver, and platinum)
+- msg.narc (i checked in diamond, soul silver, and platinum)
   - 16 names
   - 190 natures
   - 192 pokemon nickname suggestions

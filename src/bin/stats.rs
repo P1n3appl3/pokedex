@@ -24,6 +24,7 @@ fn main() -> Result<()> {
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         let mut c = Cursor::new(entry);
+        println!("{i}: {}", pretty_hex::simple_hex(&entry));
         let pokemon: Pokemon = c.read_ne().unwrap();
         println!("\x1b[1m===== {i} {:#?}\x1b[0m", pokemon);
     }
@@ -57,5 +58,7 @@ struct Pokemon {
     ability2: u8,
     flee: u8,
     color: u8,
+    // 92 tms, 8 hms
+    tms: [u8; 13],
 }
-static_assertions::const_assert_eq!(std::mem::size_of::<Pokemon>(), 26);
+static_assertions::const_assert_eq!(std::mem::size_of::<Pokemon>(), 40);

@@ -9,7 +9,7 @@ use std::{
 use anyhow::Result;
 use binrw::{BinRead, BinReaderExt};
 use camino::Utf8Path;
-use modular_bitfield_msb::prelude::*;
+use modular_bitfield::prelude::*;
 use smol_str::SmolStr;
 
 use crate::{NdsHeader, Slice};
@@ -180,8 +180,8 @@ struct Directory {
 #[derive(BinRead, Debug, Copy, Clone, Default)]
 #[br(map = Self::from_bytes)]
 pub struct EntryHeader {
-    is_dir: bool,
     len: B7,
+    is_dir: bool,
 }
 
 // TODO: enum with is_dir bool as magic for variant selection

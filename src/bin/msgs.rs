@@ -22,6 +22,7 @@ fn main() -> Result<()> {
     let mut c = Cursor::new(contents);
     let narc: Narc = c.read_ne().unwrap();
     let img_start = c.position() as u32 + narc.fnt_size;
+    // according to https://ds-pokemon-hacking.github.io/docs/generation-iv/guides/editing_moves/#move-name-description--battle-texts, the narc entries are different per game for various things
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         println!("\x1b[1m===== {i} {}\x1b[0m", Bytes(entry.len() as u32));
