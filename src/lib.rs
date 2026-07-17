@@ -125,17 +125,25 @@ impl Debug for Slice {
     }
 }
 
-#[derive(Debug, Copy, Clone, BinRead)]
+#[derive(Debug, Copy, Clone, BinRead, Default)]
 pub struct Color(pub u16); // bgr555, i'll use top bit for alpha?
 
 impl Color {
-    pub fn b(self) -> u8 { scale_5to8((self.0 >> 10) as u8) }
-    pub fn g(self) -> u8 { scale_5to8(((self.0 >> 5) & 0x1F) as u8) }
-    pub fn r(self) -> u8 { scale_5to8((self.0 & 0x1F) as u8) }
+    pub fn b(self) -> u8 {
+        scale_5to8((self.0 >> 10) as u8)
+    }
+    pub fn g(self) -> u8 {
+        scale_5to8(((self.0 >> 5) & 0x1F) as u8)
+    }
+    pub fn r(self) -> u8 {
+        scale_5to8((self.0 & 0x1F) as u8)
+    }
 }
 
 impl From<Color> for owo_colors::Rgb {
-    fn from(c: Color) -> Self { Self(c.r(), c.g(), c.b()) }
+    fn from(c: Color) -> Self {
+        Self(c.r(), c.g(), c.b())
+    }
 }
 
 fn scale_5to8(x: u8) -> u8 {

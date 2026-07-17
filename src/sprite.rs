@@ -21,12 +21,15 @@ pub struct Rlcn {
 
 impl std::fmt::Debug for Rlcn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("\n")?;
-        for c in self.ttlp.colors {
-            f.write_fmt(format_args!("{}", "  ".on_color::<Rgb>(c.into())))?;
+        for colors in &self.ttlp.colors {
+            f.write_str("\n")?;
+            for &c in colors {
+                f.write_fmt(format_args!("{}", "  ".on_color::<Rgb>(c.into())))?;
+            }
+            f.write_str("\n")?;
+            f.write_str("0 1 2 3 4 5 6 7 8 9 A B C D E F")?;
         }
-        f.write_str("\n")?;
-        f.write_str("0 1 2 3 4 5 6 7 8 9 A B C D E F")
+        Ok(())
     }
 }
 
@@ -41,7 +44,8 @@ pub struct Ttlp {
     pub data_size: u32,
     #[br(assert(count == 16))]
     pub count: u32,
-    pub colors: [Color; 16],
+    #[br(count = data_size / count / 2)]
+    pub colors: Vec<[Color; 16]>,
 }
 
 // nintendo character graphic resource

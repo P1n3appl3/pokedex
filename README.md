@@ -27,16 +27,16 @@ Games:
 
 Info (priority list):
 - box sprites
-- front sprites
 - pokedex prose description
 - pokedex attributes (height/weight)
 - type/stats
 - evolutions
 - hg/ss overworld sprites (2 frames for all 4 directions)
+- abilities
+- front sprites
+- moves? learnset/teachset/egg/tutor/description/power/acc/probabilities
 - back sprites
 - pokeball/other item sprites
-- abilities
-- moves? learnset/teachset/description/power/acc/probabilities
 
 Trainer teams with full level/stat/moveset info and the trainersprite would be cool but wayyyy too much work
 

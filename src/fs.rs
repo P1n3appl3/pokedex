@@ -46,11 +46,17 @@ impl<'a> NitroFs<'a> {
 }
 
 pub trait FsVisitor<'a> {
-    fn push_dir(&mut self, _name: SmolStr, _id: u16) -> bool { true }
+    fn push_dir(&mut self, _name: SmolStr, _id: u16) -> bool {
+        true
+    }
 
-    fn pop_dir(&mut self) -> bool { true }
+    fn pop_dir(&mut self) -> bool {
+        true
+    }
 
-    fn file(&mut self, _name: SmolStr, _contents: &'a [u8], _id: u16) -> bool { true }
+    fn file(&mut self, _name: SmolStr, _contents: &'a [u8], _id: u16) -> bool {
+        true
+    }
 }
 
 #[derive(Default)]

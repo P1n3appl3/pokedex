@@ -3,9 +3,10 @@ use std::{env, fs, io::Cursor};
 use anyhow::{Context, Result};
 use binrw::BinReaderExt;
 
+use memchr::memmem;
 use owo_colors::{OwoColorize, Rgb};
 use pokedex::{
-    Color, Narc, UPPER,
+    Color, Narc, NdsHeader, UPPER,
     fs::{FsEntry, NitroFs},
     sprite::{Rgcn, Rlcn},
 };
@@ -20,31 +21,55 @@ fn main() -> Result<()> {
         panic!("poke_icon.narc not found");
     };
 
+    let mut cursor = Cursor::new(&rom);
+    let header: NdsHeader = cursor.read_le()?;
+    let arm9 = &rom[header.arm9.rom_offset as usize
+        ..(header.arm9.rom_offset + header.arm9.size) as usize];
+    let pattern = [0u8, 1, 1, 1, 0, 0, 0, 0, 2, 2, 1, 1, 0, 1, 2, 2].as_slice();
+    let offset = memmem::find(arm9, pattern).unwrap();
+    let palettes = &arm9[offset..];
+    debug_assert!(memmem::find(palettes, pattern).is_none());
+    // println!("{}", pretty_hex::pretty_hex(&&palettes[..400]));
+
     let mut c = Cursor::new(contents);
     let narc: Narc = c.read_le()?;
     let img_start = c.position() as u32 + narc.fnt_size;
-    let mut colors = [Color(0xFF); 16];
+    let mut colors = Vec::new();
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         let mut c = Cursor::new(entry);
         match &entry[..4] {
             b"RLCN" => {
+                // println!("{i}: {}", pretty_hex::pretty_hex(&entry));
                 let palette: Rlcn = c.read_le().unwrap();
-                colors = palette.ttlp.colors;
-                colors[0] = Color(0);
+                colors = palette.ttlp.colors.clone();
+                for pal in &mut colors {
+                    pal[0] = Color(0);
+                }
                 println!("\x1b[1m===== {i}\x1b[0m  {:#?}", palette);
             }
             b"RGCN" => {
                 let _sprite: Rgcn = c.read_le()?;
                 let mut img = [[Color(0); 32]; 64];
-                println!("{i}");
+                println!("pokemon #{}", i - 7);
+                let pal = palettes[i - 7] as usize; // offset for palette/anim/other files
                 for (i, &b) in entry[c.position() as usize..].iter().enumerate() {
                     let (x, y) = tile_coord(i * 2, 32);
-                    img[y][x] = colors[b as usize & 0xF];
-                    img[y][x + 1] = colors[b as usize >> 4];
+                    img[y][x] = colors[pal][b as usize & 0xF];
+                    img[y][x + 1] = colors[pal][b as usize >> 4];
                 }
-                for [r1, r2] in img.as_chunks::<2>().0 {
-                    for (&top, &bottom) in r1.iter().zip(r2) {
+                let a = &img[..img.len() / 2];
+                let b = &img[img.len() / 2..];
+                for ([a1, a2], [b1, b2]) in a.as_chunks::<2>().0.iter().zip(b.as_chunks().0)
+                {
+                    for (&top, &bottom) in a1.iter().zip(a2) {
+                        print!(
+                            "{}",
+                            UPPER.color::<Rgb>(top.into()).on_color::<Rgb>(bottom.into())
+                        );
+                    }
+                    print!("    ");
+                    for (&top, &bottom) in b1.iter().zip(b2) {
                         print!(
                             "{}",
                             UPPER.color::<Rgb>(top.into()).on_color::<Rgb>(bottom.into())

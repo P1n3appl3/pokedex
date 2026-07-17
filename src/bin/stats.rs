@@ -1,7 +1,7 @@
 use std::{env, fs, io::Cursor};
 
 use anyhow::{Context, Result};
-use binrw::{BinRead, BinReaderExt, helpers::until_exclusive};
+use binrw::{BinRead, BinReaderExt};
 
 use pokedex::{
     Narc,
