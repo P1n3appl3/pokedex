@@ -20,12 +20,12 @@ fn main() -> Result<()> {
     };
 
     let mut c = Cursor::new(contents);
-    let narc: Narc = c.read_le().unwrap();
+    let narc: Narc = c.read_le()?;
     let img_start = c.position() as u32 + narc.fnt_size;
     for (i, f) in narc.fat.iter().enumerate() {
         let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
         println!("\x1b[1m===== {i} {}\x1b[0m", Bytes(entry.len() as u32));
-        for (i, s) in decode_msg(entry).unwrap().iter().enumerate().take(max_strings) {
+        for (i, s) in decode_msg(entry)?.iter().enumerate().take(max_strings) {
             println!("{i:>4}: {s:?}");
         }
         println!()

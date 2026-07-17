@@ -4,7 +4,7 @@ use binrw::BinRead;
 use owo_colors::{OwoColorize, Rgb};
 use smol_str::SmolStr;
 
-use crate::{Color, wide_smol_str};
+use crate::{Color, UPPER, wide_smol_str};
 
 // https://problemkaputt.de/gbatek-ds-cartridge-icon-title.htm
 #[derive(Clone, Debug, BinRead)]
@@ -47,32 +47,6 @@ impl Icon {
     }
 }
 
-const UPPER: char = '▀';
-const LOWER: char = '▄';
-
-fn scale_5to8(x: u8) -> u8 {
-    assert!(x <= 0x1F);
-    (x << 3) | (x >> 2)
-}
-
-impl Color {
-    fn b(self) -> u8 {
-        scale_5to8((self.0 >> 10) as u8)
-    }
-    fn g(self) -> u8 {
-        scale_5to8(((self.0 >> 5) & 0x1F) as u8)
-    }
-    fn r(self) -> u8 {
-        scale_5to8((self.0 & 0x1F) as u8)
-    }
-}
-
-impl From<Color> for Rgb {
-    fn from(c: Color) -> Self {
-        Self(c.r(), c.g(), c.b())
-    }
-}
-
 impl Debug for Icon {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_char('\n')?;
@@ -91,15 +65,5 @@ impl Debug for Icon {
             }
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn scale() {
-        assert_eq!(scale_5to8(0), 0);
-        assert_eq!(scale_5to8(0x1F), 0xFF);
     }
 }
