@@ -15,7 +15,8 @@ fn main() -> Result<()> {
     let max_strings = env::args().nth(2).map(|s| s.parse().unwrap()).unwrap_or(usize::MAX);
 
     let fs = NitroFs::new(&rom)?;
-    let Some(FsEntry::File(contents)) = fs.get("msgdata/msg.narc".into()) else {
+    let game = fs.header.game()?;
+    let Some(FsEntry::File(contents)) = fs.get(game.text().into()) else {
         panic!("msg.narc not found");
     };
 

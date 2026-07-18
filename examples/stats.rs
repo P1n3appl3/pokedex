@@ -13,8 +13,8 @@ fn main() -> Result<()> {
     let rom = fs::read(rom_path).context("couldn't find ROM")?;
 
     let fs = NitroFs::new(&rom)?;
-    let Some(FsEntry::File(contents)) = fs.get("poketool/personal/personal.narc".into())
-    else {
+    let game = fs.header.game()?;
+    let Some(FsEntry::File(contents)) = fs.get(game.stats().into()) else {
         panic!("personal.narc not found");
     };
 
@@ -29,14 +29,14 @@ fn main() -> Result<()> {
         println!("\x1b[1m===== {i} {:#?}\x1b[0m", pokemon);
     }
 
-    let Some(FsEntry::File(contents)) = fs.get("poketool/personal/pms.narc".into()) else {
+    let Some(FsEntry::File(contents)) = fs.get(game.base_forms().into()) else {
         panic!("pms.narc not found");
     };
     for (i, j) in contents.chunks_exact(2).enumerate() {
         println!("pokemon {i} base form is {}", u16::from_le_bytes(*j.as_array().unwrap()));
     }
 
-    let Some(FsEntry::File(contents)) = fs.get("poketool/personal/evo.narc".into()) else {
+    let Some(FsEntry::File(contents)) = fs.get(game.evolutions().into()) else {
         panic!("evo.narc not found");
     };
 

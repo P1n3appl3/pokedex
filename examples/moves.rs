@@ -13,8 +13,8 @@ fn main() -> Result<()> {
     let rom = fs::read(rom_path).context("couldn't find ROM")?;
 
     let fs = NitroFs::new(&rom)?;
-    let Some(FsEntry::File(contents)) = fs.get("poketool/personal/wotbl.narc".into())
-    else {
+    let game = fs.header.game()?;
+    let Some(FsEntry::File(contents)) = fs.get(game.learnset().into()) else {
         panic!("wotbl.narc not found");
     };
     let mut c = Cursor::new(contents);
@@ -34,7 +34,7 @@ fn main() -> Result<()> {
         }
     }
 
-    let Some(FsEntry::File(contents)) = fs.get("poketool/waza/waza_tbl.narc".into()) else {
+    let Some(FsEntry::File(contents)) = fs.get(game.moves().into()) else {
         panic!("waza_tbl.narc not found");
     };
     let mut c = Cursor::new(contents);

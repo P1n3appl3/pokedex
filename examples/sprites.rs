@@ -6,7 +6,7 @@ use binrw::BinReaderExt;
 use memchr::memmem;
 use owo_colors::{OwoColorize, Rgb};
 use pokedex::{
-    Color, Narc, NdsHeader, UPPER,
+    Color, Narc, UPPER,
     fs::{FsEntry, NitroFs},
     sprite::{Rgcn, Rlcn},
 };
@@ -16,15 +16,13 @@ fn main() -> Result<()> {
     let rom = fs::read(rom_path).context("couldn't find ROM")?;
 
     let fs = NitroFs::new(&rom)?;
-    let Some(FsEntry::File(contents)) = fs.get("poketool/icongra/poke_icon.narc".into())
-    else {
+    let game = fs.header.game()?;
+    let Some(FsEntry::File(contents)) = fs.get(game.box_sprites().into()) else {
         panic!("poke_icon.narc not found");
     };
 
-    let mut cursor = Cursor::new(&rom);
-    let header: NdsHeader = cursor.read_le()?;
-    let arm9 = &rom[header.arm9.rom_offset as usize
-        ..(header.arm9.rom_offset + header.arm9.size) as usize];
+    let arm9 = &rom[fs.header.arm9.rom_offset as usize
+        ..(fs.header.arm9.rom_offset + fs.header.arm9.size) as usize];
     let pattern = [0u8, 1, 1, 1, 0, 0, 0, 0, 2, 2, 1, 1, 0, 1, 2, 2].as_slice();
     let offset = memmem::find(arm9, pattern).unwrap();
     let palettes = &arm9[offset..];

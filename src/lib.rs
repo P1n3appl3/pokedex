@@ -10,7 +10,9 @@ use std::{
     string::FromUtf16Error,
 };
 
+use anyhow::{Result, anyhow};
 use binrw::{BinRead, NullString, NullWideString};
+use clap::ValueEnum;
 use fs::FileAllocationTable;
 use smol_str::SmolStr;
 
@@ -153,6 +155,113 @@ fn scale_5to8(x: u8) -> u8 {
 
 pub const UPPER: char = '▀';
 // const LOWER: char = '▄';
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum Game {
+    Diamond,
+    Pearl,
+    Platinum,
+    HeartGold,
+    SoulSilver,
+}
+
+impl Game {
+    pub fn text(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl => "msg_data/msg.narc",
+            Platinum => "msg_data/pl_msg.narc",
+            HeartGold | SoulSilver => "/a/0/2/7",
+        }
+    }
+
+    pub fn stats(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl => "poketool/personal/personal.narc",
+            Platinum => "poketool/personal/pl_personal.narc",
+            HeartGold | SoulSilver => "/a/0/0/2",
+        }
+    }
+
+    pub fn base_forms(self) -> &'static str {
+        "poketool/personal/pms.narc"
+    }
+
+    pub fn evolutions(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl | Platinum => "poketool/personal/evo.narc",
+            HeartGold | SoulSilver => "a/0/3/4",
+        }
+    }
+
+    pub fn moves(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl => "poketool/waza/waza_tbl.narc",
+            Platinum => "poketool/waza/pl_waza_tbl.narc",
+            HeartGold | SoulSilver => "/a/0/1/1",
+        }
+    }
+
+    pub fn learnset(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl | Platinum => "poketool/personal/wotbl.narc",
+            HeartGold | SoulSilver => "/a/0/3/3",
+        }
+    }
+
+    pub fn box_sprites(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl => "poketool/icongra/poke_icon.narc",
+            Platinum => "poketool/icongra/pl_poke_icon.narc",
+            HeartGold | SoulSilver => "a/2/2/8",
+        }
+    }
+
+    pub fn front_sprites(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl => "poketool/pokegra/pokegra.narc",
+            Platinum => "poketool/pokegra/pl_pokegra.narc",
+            HeartGold | SoulSilver => "a/0/0/4",
+        }
+    }
+
+    pub fn alt_form_sprites(self) -> &'static str {
+        use Game::*;
+        match self {
+            Diamond | Pearl => "poketool/pokegra/otherpoke.narc",
+            Platinum => "poketool/pokegra/pl_otherpoke.narc",
+            HeartGold | SoulSilver => "a/1/1/4",
+        }
+    }
+}
+
+impl NdsHeader {
+    pub fn game(&self) -> Result<Game> {
+        use Game::*;
+        dbg!(&self.title);
+        Ok(match &self.game_code.as_str()[..3] {
+            "ADA" => Diamond,
+            "APA" => Pearl,
+            "CPU" => Platinum,
+            "IPK" => HeartGold,
+            "IPG" => SoulSilver,
+            _ => match self.title.as_str() {
+                "POKEMON D" => Diamond,
+                "POKEMON P" => Pearl,
+                "POKEMON PL" => Platinum,
+                "POKEMON HG" => HeartGold,
+                "POKEMON SS" => SoulSilver,
+                _ => return Err(anyhow!("unknown game")),
+            },
+        })
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -14,8 +14,11 @@ use smol_str::SmolStr;
 
 use crate::{NdsHeader, Slice};
 
-#[derive(Default, Clone, Debug)]
-pub struct NitroFs<'a>(pub HashMap<SmolStr, FsEntry<'a>>);
+#[derive(Clone, Debug)]
+pub struct NitroFs<'a> {
+    pub files: HashMap<SmolStr, FsEntry<'a>>,
+    pub header: NdsHeader,
+}
 
 #[derive(Debug, Clone)]
 pub enum FsEntry<'a> {
@@ -29,12 +32,12 @@ impl<'a> NitroFs<'a> {
         let header: NdsHeader = cursor.read_le()?;
         let mut collector = Collector::default();
         parse_nitro_fs(header.fnt, header.fat, &mut cursor, &mut collector)?;
-        Ok(collector.fs)
+        Ok(NitroFs { files: collector.fs, header })
     }
 
     pub fn get(&self, path: &Utf8Path) -> Option<&FsEntry<'a>> {
         let mut components = path.components();
-        let mut cur: &FsEntry = self.0.get(components.next()?.as_str())?;
+        let mut cur: &FsEntry = self.files.get(components.next()?.as_str())?;
         for c in components {
             let FsEntry::Dir(map) = cur else {
                 return None;
@@ -61,13 +64,13 @@ pub trait FsVisitor<'a> {
 
 #[derive(Default)]
 struct Collector<'a> {
-    fs: NitroFs<'a>,
+    fs: HashMap<SmolStr, FsEntry<'a>>,
     stack: Vec<SmolStr>,
 }
 
 impl<'a> Collector<'a> {
     fn push(&mut self, name: SmolStr, new: FsEntry<'a>) {
-        let mut cur = &mut self.fs.0;
+        let mut cur = &mut self.fs;
         for component in &self.stack {
             let FsEntry::Dir(next) = cur.get_mut(component).unwrap() else {
                 unreachable!("")
