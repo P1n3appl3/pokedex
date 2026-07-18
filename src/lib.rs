@@ -244,7 +244,6 @@ impl Game {
 impl NdsHeader {
     pub fn game(&self) -> Result<Game> {
         use Game::*;
-        dbg!(&self.title);
         Ok(match &self.game_code.as_str()[..3] {
             "ADA" => Diamond,
             "APA" => Pearl,

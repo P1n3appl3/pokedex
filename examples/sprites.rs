@@ -6,10 +6,36 @@ use binrw::BinReaderExt;
 use memchr::memmem;
 use owo_colors::{OwoColorize, Rgb};
 use pokedex::{
-    Color, Narc, UPPER,
+    Color, Game, Narc, UPPER,
     fs::{FsEntry, NitroFs},
     sprite::{Rgcn, Rlcn},
 };
+
+fn lz77(bytes: &[u8]) -> Vec<u8> {
+    let mut decompressed = Vec::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        let control = bytes[i];
+        i += 1;
+        for j in (0..8).rev() {
+            if control & 1 << j == 0 {
+                decompressed.push(bytes[i]);
+                i += 1
+            } else {
+                let copy_offset = ((bytes[i] as u16 & 0xF0) << 4 | bytes[i + 1] as u16) + 1;
+                let mut count = bytes[i] % 0x0F;
+                let data = (&decompressed[decompressed.len() - copy_offset as usize..]);
+                let n = 0;
+                // while count != 0 {
+                //     decompressed.push(data[n % data.len()]);
+                //     n += 1;
+                //     count -= 1;
+                // }
+            }
+        }
+    }
+    decompressed
+}
 
 fn main() -> Result<()> {
     let rom_path = env::args().nth(1).context("pass a ROM path")?;
@@ -23,10 +49,18 @@ fn main() -> Result<()> {
 
     let arm9 = &rom[fs.header.arm9.rom_offset as usize
         ..(fs.header.arm9.rom_offset + fs.header.arm9.size) as usize];
-    let pattern = [0u8, 1, 1, 1, 0, 0, 0, 0, 2, 2, 1, 1, 0, 1, 2, 2].as_slice();
+    println!("{}", pretty_hex::pretty_hex(&&arm9[arm9.len() - 400..]));
+    let mut _decompressed = Default::default();
+    let arm9 = if matches!(game, Game::HeartGold | Game::SoulSilver) {
+        _decompressed = lz77(arm9);
+        &_decompressed
+    } else {
+        arm9
+    };
+    let pattern = [0, 1, 1, 1, 0, 0, 0, 0, 2, 2, 1, 1, 0, 1, 2, 2].as_slice();
     let offset = memmem::find(arm9, pattern).unwrap();
     let palettes = &arm9[offset..];
-    debug_assert!(memmem::find(palettes, pattern).is_none());
+    debug_assert!(memmem::find(&palettes[500..], pattern).is_none());
     // println!("{}", pretty_hex::pretty_hex(&&palettes[..400]));
 
     let mut c = Cursor::new(contents);
