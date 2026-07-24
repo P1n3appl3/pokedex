@@ -18,6 +18,7 @@ fn main() -> Result<()> {
 
     let mut cursor = Cursor::new(&rom[..]);
     let header: NdsHeader = cursor.read_le()?;
+    dbg!(&header);
     cursor.seek(Start(header.banner_offset as u64))?;
 
     let mut v = TreeVisitor(0);
