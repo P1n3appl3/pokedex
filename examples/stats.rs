@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use binrw::{BinRead, BinReaderExt};
 
 use pokedex::{
-    Narc,
+    Evos, Narc, Pokemon,
     fs::{FsEntry, NitroFs},
 };
 
@@ -53,43 +53,3 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-#[derive(BinRead, Copy, Clone, Debug)]
-struct Pokemon {
-    base_hp: u8,
-    attack: u8,
-    defence: u8,
-    speed: u8,
-    special_attack: u8,
-    special_defence: u8,
-    type1: u8,
-    type2: u8,
-    catch_rate: u8,
-    exp: u8,
-    evs: u16,
-    item1: u16,
-    item2: u16,
-    gender: u8,
-    hatch_cycle: u8,
-    base_happy: u8,
-    exprate: u8,
-    egg_group1: u8,
-    egg_group2: u8,
-    ability1: u8,
-    ability2: u8,
-    flee: u8,
-    color: u8,
-    // 92 tms, 8 hms
-    tms: [u8; 13],
-}
-static_assertions::const_assert_eq!(std::mem::size_of::<Pokemon>(), 40);
-
-#[derive(BinRead, Copy, Clone, Debug)]
-struct Evo {
-    method: u16,
-    param: u16,
-    target: u16,
-}
-
-#[derive(BinRead, Copy, Clone, Debug)]
-struct Evos([Evo; 7]);

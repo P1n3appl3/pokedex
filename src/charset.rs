@@ -1,5 +1,5 @@
 /*
-This file was generated with the following script:
+This table was generated with the following script:
 xh 'https://bulbapedia.bulbagarden.net/wiki/Character_encoding_(Generation_IV)' |
          pup 'table.wikitable:first-of-type td text{}' |
          sed '/^$/d' |
@@ -15,7 +15,7 @@ xh 'https://bulbapedia.bulbagarden.net/wiki/Character_encoding_(Generation_IV)' 
          xargs -I{} echo "'{}'," |
          { echo 'pub const CHARSET: &[char] = &[' &&
              cat &&
-             echo "' ', ' ', ' ', ' ', ' '];" } >src/charset.rs
+             echo "' ', 'e', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '°', ' '];" } >>src/charset.rs
 
 another reference is available here:
 https://github.com/projectpokemon/ppre_legacy/blob/master/Table.tbl
@@ -52,5 +52,5 @@ pub const CHARSET: &[char] = &[
     'r', '¥', '¡', '¿', '!', '?', ',', '.', '…', '･', '/', '‘', '\x27', '“', '”', '„', '«',
     '»', '(', ')', '♂', '♀', '+', '-', '*', '#', '=', '&', '~', ':', ';', '♠', '♣', '♥',
     '♦', '★', '◎', '○', '□', '△', '◇', '@', '♪', '%', '☀', '☁', '☂', '☃', '🙂', '😃', '😫',
-    '😣', '⮭', '⮯', '💤', ' ', ' ', ' ', ' ', ' ',
+    '😣', '⮭', '⮯', '💤', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '°', ' ',
 ];

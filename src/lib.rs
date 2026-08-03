@@ -169,9 +169,9 @@ impl Game {
     pub fn text(self) -> &'static str {
         use Game::*;
         match self {
-            Diamond | Pearl => "msg_data/msg.narc",
-            Platinum => "msg_data/pl_msg.narc",
-            HeartGold | SoulSilver => "/a/0/2/7",
+            Diamond | Pearl => "msgdata/msg.narc",
+            Platinum => "msgdata/pl_msg.narc",
+            HeartGold | SoulSilver => "a/0/2/7",
         }
     }
 
@@ -180,7 +180,7 @@ impl Game {
         match self {
             Diamond | Pearl => "poketool/personal/personal.narc",
             Platinum => "poketool/personal/pl_personal.narc",
-            HeartGold | SoulSilver => "/a/0/0/2",
+            HeartGold | SoulSilver => "a/0/0/2",
         }
     }
 
@@ -201,7 +201,7 @@ impl Game {
         match self {
             Diamond | Pearl => "poketool/waza/waza_tbl.narc",
             Platinum => "poketool/waza/pl_waza_tbl.narc",
-            HeartGold | SoulSilver => "/a/0/1/1",
+            HeartGold | SoulSilver => "a/0/1/1",
         }
     }
 
@@ -209,7 +209,7 @@ impl Game {
         use Game::*;
         match self {
             Diamond | Pearl | Platinum => "poketool/personal/wotbl.narc",
-            HeartGold | SoulSilver => "/a/0/3/3",
+            HeartGold | SoulSilver => "a/0/3/3",
         }
     }
 
@@ -261,6 +261,46 @@ impl NdsHeader {
         })
     }
 }
+
+#[derive(BinRead, Copy, Clone, Debug)]
+pub struct Pokemon {
+    pub base_hp: u8,
+    pub attack: u8,
+    pub defence: u8,
+    pub speed: u8,
+    pub special_attack: u8,
+    pub special_defence: u8,
+    pub type1: u8,
+    pub type2: u8,
+    pub catch_rate: u8,
+    pub exp: u8,
+    pub evs: u16,
+    pub item1: u16,
+    pub item2: u16,
+    pub gender: u8,
+    pub hatch_cycle: u8,
+    pub base_happy: u8,
+    pub exprate: u8,
+    pub egg_group1: u8,
+    pub egg_group2: u8,
+    pub ability1: u8,
+    pub ability2: u8,
+    pub flee: u8,
+    pub color: u8,
+    // 92 tms, 8 hms
+    pub tms: [u8; 13],
+}
+static_assertions::const_assert_eq!(std::mem::size_of::<Pokemon>(), 40);
+
+#[derive(BinRead, Copy, Clone, Debug)]
+pub struct Evo {
+    pub method: u16,
+    pub param: u16,
+    pub target: u16,
+}
+
+#[derive(BinRead, Copy, Clone, Debug)]
+pub struct Evos(pub [Evo; 7]);
 
 #[cfg(test)]
 mod tests {

@@ -44,7 +44,7 @@ fn main() -> Result<()> {
     } else {
         arm9
     };
-    return Ok(());
+    // return Ok(());
     let pattern = [0, 1, 1, 1, 0, 0, 0, 0, 2, 2, 1, 1, 0, 1, 2, 2].as_slice();
     let offset = memmem::find(arm9, pattern).unwrap();
     let palettes = &arm9[offset..];

@@ -3,7 +3,52 @@ use std::io::{Cursor, Seek, SeekFrom::Start};
 use anyhow::Result;
 use binrw::BinReaderExt;
 
-use crate::charset::CHARSET;
+use crate::{Game, charset::CHARSET};
+
+impl Game {
+    pub fn msgs(self) -> Msgs {
+        use Game::*;
+        match self {
+            Diamond | Pearl => Msgs {
+                name: 362,
+                nickname: 621,
+                pokedex_prose: 615,
+                weight: 619,
+                height: 620,
+                ability: 610,
+                ability_desc: 612,
+                item: 392,
+                item_desc: 391,
+                r#move: 647,
+                move_desc: 646,
+                nature: 190,
+                status: 219,
+                stat: 495,
+                r#type: 565,
+            },
+            Platinum => todo!(),
+            HeartGold | SoulSilver => todo!(),
+        }
+    }
+}
+
+pub struct Msgs {
+    pub name: usize,
+    pub nickname: usize,
+    pub pokedex_prose: usize,
+    pub weight: usize,
+    pub height: usize,
+    pub ability: usize,
+    pub ability_desc: usize,
+    pub item: usize,
+    pub item_desc: usize,
+    pub r#move: usize,
+    pub move_desc: usize,
+    pub nature: usize,
+    pub status: usize,
+    pub r#type: usize,
+    pub stat: usize,
+}
 
 // https://projectpokemon.org/rawdb/platinum/formats/msg.php
 // https://github.com/projectpokemon/ppre_legacy/blob/master/poketext.py
