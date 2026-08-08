@@ -99,12 +99,10 @@ fn main() -> Result<()> {
     let rom = "diamond.nds";
     let rom = fs::read(rom)?;
     let fs = NitroFs::new(&rom)?;
-    let game = fs.header.game()?;
     match args.command {
         Command::Mon { name, full, alt, shiny, verbosity, animate, period } => {
             pokedex_entry(
                 &fs,
-                game,
                 name,
                 full,
                 alt,
@@ -124,7 +122,6 @@ fn main() -> Result<()> {
 
 fn pokedex_entry(
     fs: &NitroFs,
-    game: Game,
     name: String,
     full: bool,
     alt: bool,
@@ -132,6 +129,7 @@ fn pokedex_entry(
     verbosity: Verbosity,
     animate: Option<(Duration, Duration)>,
 ) -> Result<()> {
+    let game = fs.header.game()?;
     let Some(FsEntry::File(contents)) = fs.get(game.text().into()) else { unreachable!() };
     let mut c = Cursor::new(contents);
     let narc: Narc = c.read_le()?;
@@ -191,8 +189,7 @@ fn pokedex_entry(
     let Some(FsEntry::File(contents)) = fs.get(game.base_forms().into()) else {
         unreachable!()
     };
-    let temp =
-        u16::from_le_bytes(*contents.chunks_exact(2).nth(num).unwrap().as_array().unwrap());
+    let temp = u16::from_le_bytes(*contents.as_chunks::<2>().0[num].as_array().unwrap());
     println!("\nbase form is {} (#{temp})", names[temp as usize]);
 
     Ok(())

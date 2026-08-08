@@ -67,6 +67,7 @@ Functionality:
 - move coverage calculator?
 - search for mons that can learn certain move(s) alongside certain abilities with certain type(s), filter thresholds or sort by stats?
   - [this cli pokedex](https://github.com/purplecraft999/rsdex) has some cute filter options
+- favorite picker
 
 ## References
 
