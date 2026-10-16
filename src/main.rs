@@ -1,15 +1,25 @@
-use std::{ffi::OsStr, fs, io::Cursor, path::PathBuf, time::Duration};
+use std::{
+    ffi::OsStr,
+    fmt::Write,
+    fs,
+    io::{self, Cursor},
+    iter,
+    path::PathBuf,
+    time::Duration,
+};
 
 use anyhow::{Result, anyhow};
 use binrw::BinReaderExt;
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use owo_colors::{AnsiColors, OwoColorize, Rgb};
+use rand::seq::IndexedRandom;
 
 use pokedex::{
-    Game, Narc, Pokemon,
+    Game, Narc, Pokemon, UPPER,
     fs::{Bytes, FsEntry, NitroFs},
     msg::decode_msg,
+    sprite::{draw, get_palettes},
 };
-use rand::seq::IndexedRandom;
 
 /// pokedex
 #[derive(Parser, Debug)]
@@ -103,13 +113,17 @@ fn main() -> Result<()> {
         Command::Mon { name, full, alt, shiny, verbosity, animate, period } => {
             pokedex_entry(
                 &fs,
+                &rom,
                 name,
-                full,
-                alt,
-                shiny,
-                verbosity,
-                animate
-                    .map(|t| (Duration::from_secs_f32(t), Duration::from_secs_f32(period))),
+                Settings {
+                    full,
+                    alt,
+                    shiny,
+                    verbosity,
+                    animate: animate.map(|t| {
+                        (Duration::from_secs_f32(t), Duration::from_secs_f32(period))
+                    }),
+                },
             )
             .unwrap();
         }
@@ -120,15 +134,37 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn pokedex_entry(
-    fs: &NitroFs,
-    name: String,
+struct Settings {
     full: bool,
     alt: bool,
     shiny: bool,
     verbosity: Verbosity,
     animate: Option<(Duration, Duration)>,
-) -> Result<()> {
+}
+
+// n/255 = ?/width
+const BLOCKS: [char; 8] = ['▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'];
+fn stat(label: &str, value: u8, width: usize) -> String {
+    assert_eq!(ansi_width::ansi_width(label), 3);
+    let len = value as usize * width / 256;
+    let remainder = (value as usize * 8 * width / 256) % 8;
+    let color = match value {
+        0..30 => Rgb(168, 0, 0),
+        30..60 => Rgb(255, 132, 0),
+        60..90 => Rgb(255, 214, 10),
+        90..120 => Rgb(48, 148, 0),
+        120..150 => Rgb(5, 255, 80),
+        _ => Rgb(10, 240, 255),
+    };
+    format!(
+        "{label} {value:3} {}{}{}",
+        " ".repeat(len).on_color(color),
+        BLOCKS[remainder].color(color),
+        " ".repeat(width - len - 1)
+    )
+}
+
+fn pokedex_entry(fs: &NitroFs, rom: &[u8], name: String, settings: Settings) -> Result<()> {
     let game = fs.header.game()?;
     let Some(FsEntry::File(contents)) = fs.get(game.text().into()) else { unreachable!() };
     let mut c = Cursor::new(contents);
@@ -158,9 +194,13 @@ fn pokedex_entry(
             .position(|s| s == &name.to_uppercase())
             .expect("couldn't find that name")
     };
-    println!("\n\n{} (#{num}) -- {}", names[num], msg!(nickname)[num]);
-    println!("{} {}", msg!(height)[num], msg!(weight)[num]);
-    println!("\n{}\n", msg!(pokedex_prose)[num]);
+    let mut out = String::new();
+
+    writeln!(&mut out, "\n\n{} (#{num})", names[num].bold())?;
+    writeln!(&mut out, "{}", msg!(nickname)[num].bright_white().dimmed())?;
+    let size =
+        format!("{} / {}", msg!(height)[num].trim_start(), msg!(weight)[num].trim_start());
+    writeln!(&mut out, "{}", size.dimmed())?;
 
     let Some(FsEntry::File(contents)) = fs.get(game.stats().into()) else { unreachable!() };
     let mut c = Cursor::new(contents);
@@ -172,25 +212,69 @@ fn pokedex_entry(
     let mut c = Cursor::new(entry);
     let stats: Pokemon = c.read_le().unwrap();
     let types = msg!(r#type);
-    if stats.type1 == stats.type2 {
-        println!("{}/{} type", types[stats.type1 as usize], types[stats.type2 as usize]);
+    writeln!(&mut out)?;
+    if stats.type1 != stats.type2 {
+        writeln!(
+            &mut out,
+            "{}/{} type",
+            types[stats.type1 as usize], types[stats.type2 as usize]
+        )?
     } else {
-        println!("{} type", types[stats.type1 as usize])
+        writeln!(&mut out, "{} type", types[stats.type1 as usize])?
     }
-    println!();
-
-    println!("Hp    {}", stats.base_hp);
-    println!("Atk   {}", stats.attack);
-    println!("SpAtk {}", stats.special_attack);
-    println!("Def   {}", stats.defence);
-    println!("SpDef {}", stats.special_defence);
-    println!("Speed {}", stats.speed);
+    let stat_width = 10;
+    writeln!(&mut out, "\n{}\n", msg!(pokedex_prose)[num])?;
+    writeln!(
+        &mut out,
+        "{} {}",
+        stat("Hp ", stats.base_hp, stat_width),
+        stat("Spe", stats.speed, stat_width)
+    )?;
+    writeln!(
+        &mut out,
+        "{} {}",
+        stat("Atk", stats.attack, stat_width),
+        stat("SpA", stats.special_attack, stat_width)
+    )?;
+    writeln!(
+        &mut out,
+        "{} {}",
+        stat("Def", stats.defence, stat_width),
+        stat("Spd", stats.special_defence, stat_width)
+    )?;
 
     let Some(FsEntry::File(contents)) = fs.get(game.base_forms().into()) else {
         unreachable!()
     };
     let temp = u16::from_le_bytes(*contents.as_chunks::<2>().0[num].as_array().unwrap());
-    println!("\nbase form is {} (#{temp})", names[temp as usize]);
+    writeln!(&mut out, "\nbase form is {} (#{temp})", names[temp as usize])?;
+
+    let buf = &mut Vec::new();
+    let palettes = get_palettes(rom, fs, buf);
+    let main = draw(num, false, palettes, rom, fs)?;
+    let alt = draw(num, true, palettes, rom, fs)?;
+
+    let mut sprite = String::new();
+    for [a, b] in main.as_chunks::<2>().0 {
+        for (&top, &bottom) in a.iter().zip(b) {
+            write!(
+                &mut sprite,
+                "{}",
+                UPPER.color::<Rgb>(top.into()).on_color::<Rgb>(bottom.into())
+            )
+            .unwrap();
+        }
+        writeln!(&mut sprite).unwrap();
+    }
+
+    let width = termsize::get().map(|size| size.cols).unwrap();
+    for (l, r) in iter::zip(out.lines(), sprite.lines().chain(iter::repeat(""))) {
+        println!("{l}{}{r}", " ".repeat(width as usize / 2 - ansi_width::ansi_width(l)));
+    }
+
+    // for i in 0..=255 {
+    //     println!("{}", stat("tst", i, 17));
+    // }
 
     Ok(())
 }

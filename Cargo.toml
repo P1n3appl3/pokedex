@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+ansi-width = "0.1"
 anyhow = "1"
-binrw = "0.15"
+binrw = "0.15.2"
 camino = "1"
 clap = { version = "4", features = ["derive"] }
-iocraft = "0.8"
 memchr = "2"
 modular-bitfield = "0.13"
 owo-colors = "4"
@@ -16,3 +16,4 @@ pretty-hex = "0.4"
 rand = "0.10"
 smol_str = "0.3"
 static_assertions = "1"
+termsize = "0.1"
