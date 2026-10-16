@@ -108,7 +108,6 @@ pub fn draw(
     pokemon: usize,
     alt_frame: bool,
     palettes: &[u8],
-    rom: &[u8],
     fs: &NitroFs,
 ) -> Result<[[Color; 32]; 32]> {
     let game = fs.header.game()?;
@@ -175,7 +174,8 @@ pub fn tile_coord(i: usize, width: usize) -> (usize, usize) {
     (tx * TILE_SIZE + x, ty * TILE_SIZE + y)
 }
 
-fn blz(bytes: &[u8], buf: &mut [u8]) {
+// TODO
+fn blz(bytes: &[u8], _buf: &mut [u8]) {
     let mut i = bytes.len() - 4;
     let extra_space = u32::from_ne_bytes(*bytes[i..].as_array().unwrap());
     let read_offset = bytes[i - 1];

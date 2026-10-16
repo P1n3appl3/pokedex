@@ -32,7 +32,7 @@ fn main() -> Result<()> {
     let Some(FsEntry::File(contents)) = fs.get(game.base_forms().into()) else {
         panic!("pms.narc not found");
     };
-    for (i, j) in contents.chunks_exact(2).enumerate() {
+    for (i, j) in contents.as_chunks::<2>().0.iter().enumerate() {
         println!("pokemon {i} base form is {}", u16::from_le_bytes(*j.as_array().unwrap()));
     }
 

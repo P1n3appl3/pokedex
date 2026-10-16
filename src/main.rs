@@ -7,7 +7,7 @@ use owo_colors::{OwoColorize, Rgb};
 use rand::seq::IndexedRandom;
 
 use pokedex::{
-    Evos, Game, Narc, Pokemon, UPPER,
+    Game, Narc, Pokemon, UPPER,
     fs::{FsEntry, NitroFs},
     msg::decode_msg,
     sprite::{draw, get_palettes},
@@ -98,7 +98,7 @@ fn main() -> Result<()> {
     let args = Pokedex::parse();
 
     // TODO: fix once hgss decryption is working
-    let rom = if let Some(game) = args.game { todo!() } else { random_rom()? };
+    let _ = if let Some(_game) = args.game { todo!() } else { random_rom()? };
     let rom = "diamond.nds";
     let rom = fs::read(rom)?;
     let fs = NitroFs::new(&rom)?;
@@ -161,6 +161,7 @@ fn stat(label: &str, value: u8, width: usize) -> String {
 
 fn typing(stats: &Pokemon, type_names: &[String]) -> Result<String> {
     // TODO: get foreground and background colors from the game
+    // for now i'm using the nice curated list from https://pokemonaaah.net/art/colordex
     const TYPE_COLORS: [(Rgb, Rgb); 18] = [
         (Rgb(170, 176, 159), Rgb(0, 0, 0)), // Normal
         (Rgb(203, 95, 72), Rgb(0, 0, 0)),   // Fighting
@@ -233,7 +234,7 @@ fn pokedex_entry(
     };
     let mut out = String::new();
 
-    writeln!(&mut out, "\n\n{} (#{num})", names[num].bold())?;
+    writeln!(&mut out, "{} (#{num})", names[num].bold())?;
     writeln!(&mut out, "{}", msg!(nickname)[num].bright_white().dimmed())?;
     let size =
         format!("{} / {}", msg!(height)[num].trim_start(), msg!(weight)[num].trim_start());
@@ -268,7 +269,7 @@ fn pokedex_entry(
         &mut out,
         "{} {}",
         stat("Def", stats.defence, stat_width),
-        stat("Spd", stats.special_defence, stat_width)
+        stat("SpD", stats.special_defence, stat_width)
     )?;
 
     let Some(FsEntry::File(contents)) = fs.get(game.base_forms().into()) else {
@@ -294,8 +295,8 @@ fn pokedex_entry(
 
     let buf = &mut Vec::new();
     let palettes = get_palettes(rom, fs, buf);
-    let main = draw(num, false, palettes, rom, fs)?;
-    // let alt = draw(num, true, palettes, rom, fs)?;
+    let main = draw(num, false, palettes, fs)?;
+    // let alt = draw(num, true, palettes, fs)?;
 
     let mut sprite = String::new();
     for [a, b] in main.as_chunks::<2>().0 {

@@ -16,7 +16,7 @@ fn main() -> Result<()> {
     let palettes = get_palettes(&rom, &fs, buf);
 
     for i in 0..600 {
-        if sprite::draw(i, false, palettes, &rom, &fs).is_err() {
+        if sprite::draw(i, false, palettes, &fs).is_err() {
             break;
         }
     }
