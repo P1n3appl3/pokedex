@@ -7,7 +7,7 @@ use owo_colors::{OwoColorize, Rgb};
 use rand::seq::IndexedRandom;
 
 use pokedex::{
-    Game, Narc, Pokemon, UPPER,
+    Evos, Game, Narc, Pokemon, UPPER,
     fs::{FsEntry, NitroFs},
     msg::decode_msg,
     sprite::{draw, get_palettes},
@@ -274,8 +274,23 @@ fn pokedex_entry(
     let Some(FsEntry::File(contents)) = fs.get(game.base_forms().into()) else {
         unreachable!()
     };
-    let temp = u16::from_le_bytes(*contents.as_chunks::<2>().0[num].as_array().unwrap());
-    writeln!(&mut out, "\nbase form is {} (#{temp})", names[temp as usize])?;
+    let base = u16::from_le_bytes(*contents.as_chunks::<2>().0[num].as_array().unwrap());
+    if base as usize != num {
+        writeln!(&mut out, "\nbase form is {} (#{base})", names[base as usize])?;
+    }
+
+    // let Some(FsEntry::File(contents)) = fs.get(game.evolutions().into()) else {
+    //     panic!("evo.narc not found");
+    // };
+    // let mut c = Cursor::new(contents);
+    // let narc: Narc = c.read_le().unwrap();
+    // let img_start = c.position() as u32 + narc.fnt_size;
+    // for (i, f) in narc.fat.iter().enumerate() {
+    //     let entry = &contents[(img_start + f.start) as usize..(img_start + f.end) as usize];
+    //     let mut c = Cursor::new(entry);
+    //     let evos: Evos = c.read_le().unwrap();
+    //     println!("\x1b[1m===== {i} {:#?}\x1b[0m", evos.0);
+    // }
 
     let buf = &mut Vec::new();
     let palettes = get_palettes(rom, fs, buf);
@@ -295,10 +310,13 @@ fn pokedex_entry(
         writeln!(&mut sprite).unwrap();
     }
 
-    let width = termsize::get().map(|size| size.cols).unwrap();
-    let pad_to = width / 2;
+    // let width = termsize::get().map(|size| size.cols).unwrap();
+    // let pad_to = width / 2;
     let pad_to = 38;
-    for (l, r) in iter::zip(out.lines(), sprite.lines().chain(iter::repeat(""))) {
+    for (l, r) in iter::zip(
+        out.lines().chain(iter::repeat_n("", 16 - out.lines().count())),
+        sprite.lines().chain(iter::repeat("")),
+    ) {
         println!("{l}{}{r}", " ".repeat(pad_to - ansi_width::ansi_width(l)));
     }
 
