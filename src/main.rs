@@ -1,22 +1,14 @@
-use std::{
-    ffi::OsStr,
-    fmt::Write,
-    fs,
-    io::{self, Cursor},
-    iter,
-    path::PathBuf,
-    time::Duration,
-};
+use std::{ffi::OsStr, fmt::Write, fs, io::Cursor, iter, path::PathBuf, time::Duration};
 
 use anyhow::{Result, anyhow};
 use binrw::BinReaderExt;
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use owo_colors::{AnsiColors, OwoColorize, Rgb};
+use owo_colors::{OwoColorize, Rgb};
 use rand::seq::IndexedRandom;
 
 use pokedex::{
     Game, Narc, Pokemon, UPPER,
-    fs::{Bytes, FsEntry, NitroFs},
+    fs::{FsEntry, NitroFs},
     msg::decode_msg,
     sprite::{draw, get_palettes},
 };
@@ -105,6 +97,7 @@ enum Component {
 fn main() -> Result<()> {
     let args = Pokedex::parse();
 
+    // TODO: fix once hgss decryption is working
     let rom = if let Some(game) = args.game { todo!() } else { random_rom()? };
     let rom = "diamond.nds";
     let rom = fs::read(rom)?;
@@ -134,6 +127,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(unused)]
 struct Settings {
     full: bool,
     alt: bool,
@@ -142,7 +136,8 @@ struct Settings {
     animate: Option<(Duration, Duration)>,
 }
 
-// n/255 = ?/width
+// technically this offsets all bars by an eigth, but i like that since
+// the "0" case having a completely blank bar is unintuitive
 const BLOCKS: [char; 8] = ['▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'];
 fn stat(label: &str, value: u8, width: usize) -> String {
     assert_eq!(ansi_width::ansi_width(label), 3);
@@ -164,7 +159,49 @@ fn stat(label: &str, value: u8, width: usize) -> String {
     )
 }
 
-fn pokedex_entry(fs: &NitroFs, rom: &[u8], name: String, settings: Settings) -> Result<()> {
+fn typing(stats: &Pokemon, type_names: &[String]) -> Result<String> {
+    // TODO: get foreground and background colors from the game
+    const TYPE_COLORS: [(Rgb, Rgb); 18] = [
+        (Rgb(170, 176, 159), Rgb(0, 0, 0)), // Normal
+        (Rgb(203, 95, 72), Rgb(0, 0, 0)),   // Fighting
+        (Rgb(125, 166, 222), Rgb(0, 0, 0)), // Flying
+        (Rgb(180, 104, 183), Rgb(0, 0, 0)), // Poison
+        (Rgb(204, 159, 79), Rgb(0, 0, 0)),  // Ground
+        (Rgb(178, 160, 97), Rgb(0, 0, 0)),  // Rock
+        (Rgb(148, 188, 74), Rgb(0, 0, 0)),  // Bug
+        (Rgb(132, 106, 182), Rgb(0, 0, 0)), // Ghost
+        (Rgb(137, 161, 176), Rgb(0, 0, 0)), // Steel
+        (Rgb(129, 165, 150), Rgb(0, 0, 0)), // ???
+        (Rgb(234, 122, 60), Rgb(0, 0, 0)),  // Fire
+        (Rgb(83, 154, 226), Rgb(0, 0, 0)),  // Water
+        (Rgb(113, 197, 88), Rgb(0, 0, 0)),  // Grass
+        (Rgb(229, 197, 49), Rgb(0, 0, 0)),  // Electric
+        (Rgb(229, 112, 155), Rgb(0, 0, 0)), // Psychic
+        (Rgb(112, 203, 212), Rgb(0, 0, 0)), // Ice
+        (Rgb(106, 123, 175), Rgb(0, 0, 0)), // Dragon
+        (Rgb(115, 108, 117), Rgb(0, 0, 0)), // Dark
+    ];
+    let mut out = String::new();
+    let color1 = TYPE_COLORS[stats.type1 as usize];
+    let type1 = format!(" {} ", type_names[stats.type1 as usize]);
+    let type1 = type1.on_color(color1.0).color(color1.1);
+    let color2 = TYPE_COLORS[stats.type2 as usize];
+    let type2 = format!(" {} ", type_names[stats.type2 as usize]);
+    let type2 = type2.on_color(color2.0).color(color2.1);
+    if stats.type1 != stats.type2 {
+        writeln!(&mut out, "{} {}", type1.bold(), type2.bold())?
+    } else {
+        writeln!(&mut out, "{}", type1.bold())?
+    }
+    Ok(out)
+}
+
+fn pokedex_entry(
+    fs: &NitroFs,
+    rom: &[u8],
+    name: String,
+    _settings: Settings,
+) -> Result<()> {
     let game = fs.header.game()?;
     let Some(FsEntry::File(contents)) = fs.get(game.text().into()) else { unreachable!() };
     let mut c = Cursor::new(contents);
@@ -212,18 +249,9 @@ fn pokedex_entry(fs: &NitroFs, rom: &[u8], name: String, settings: Settings) -> 
     let mut c = Cursor::new(entry);
     let stats: Pokemon = c.read_le().unwrap();
     let types = msg!(r#type);
-    writeln!(&mut out)?;
-    if stats.type1 != stats.type2 {
-        writeln!(
-            &mut out,
-            "{}/{} type",
-            types[stats.type1 as usize], types[stats.type2 as usize]
-        )?
-    } else {
-        writeln!(&mut out, "{} type", types[stats.type1 as usize])?
-    }
+    writeln!(&mut out, "{}", typing(&stats, &types)?)?;
     let stat_width = 10;
-    writeln!(&mut out, "\n{}\n", msg!(pokedex_prose)[num])?;
+    writeln!(&mut out, "{}\n", msg!(pokedex_prose)[num])?;
     writeln!(
         &mut out,
         "{} {}",
@@ -252,7 +280,7 @@ fn pokedex_entry(fs: &NitroFs, rom: &[u8], name: String, settings: Settings) -> 
     let buf = &mut Vec::new();
     let palettes = get_palettes(rom, fs, buf);
     let main = draw(num, false, palettes, rom, fs)?;
-    let alt = draw(num, true, palettes, rom, fs)?;
+    // let alt = draw(num, true, palettes, rom, fs)?;
 
     let mut sprite = String::new();
     for [a, b] in main.as_chunks::<2>().0 {
@@ -268,8 +296,10 @@ fn pokedex_entry(fs: &NitroFs, rom: &[u8], name: String, settings: Settings) -> 
     }
 
     let width = termsize::get().map(|size| size.cols).unwrap();
+    let pad_to = width / 2;
+    let pad_to = 38;
     for (l, r) in iter::zip(out.lines(), sprite.lines().chain(iter::repeat(""))) {
-        println!("{l}{}{r}", " ".repeat(width as usize / 2 - ansi_width::ansi_width(l)));
+        println!("{l}{}{r}", " ".repeat(pad_to - ansi_width::ansi_width(l)));
     }
 
     // for i in 0..=255 {
